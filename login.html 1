@@ -1,0 +1,21 @@
+<div class="container">
+  <h2>Login</h2>
+  <form [formGroup]="loginForm" (submit)="onSubmit()">
+    <div>
+      <label for="username">Username:</label>
+      <input id="username" formControlName="username">
+      <p *ngIf="loginForm.get('username')?.invalid">Username is required.</p>
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <input id="password" type="password" formControlName="password">
+      <p *ngIf="loginForm.get('password')?.invalid">Password is required.</p>
+    </div>
+    <div>
+      <label for="role">Role:</label>
+      <p-dropdown id="role" formControlName="role" [options]="roles" optionLabel="label" optionValue="value"></p-dropdown>
+      <p *ngIf="loginForm.get('role')?.invalid">Role is required.</p>
+    </div>
+    <button type="submit" [disabled]="loginForm.invalid">Login</button>
+  </form>
+</div>
