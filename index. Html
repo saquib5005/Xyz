@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Policy Issuance & Claims Processing</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- Add Poppins font from Google Fonts – this makes the entire website use Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Optional: Quick global style to apply Poppins everywhere -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif !important;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa; /* Light white-gray background for clean look */
+    }
+  </style>
+</head>
+<body>
+  <app-root></app-root> <!-- This is where Angular loads your app -->
+</body>
+</html>
