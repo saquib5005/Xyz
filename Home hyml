@@ -1,0 +1,43 @@
+<div style="background-color: #f5f5f5; padding: 20px; max-width: 800px; margin: auto;">
+  <h2>Dashboard</h2>
+
+  <!-- User Role Menu -->
+  <ng-container *ngIf="role === 'User'">
+    <h3>User Menu</h3>
+    <ul>
+      <li><a routerLink="/view-policies">View Policies</a></li>
+      <li><a routerLink="/apply-claim">Apply Claim</a></li>
+    </ul>
+  </ng-container>
+
+  <!-- Approver Role Menu -->
+  <ng-container *ngIf="role === 'Approver'">
+    <h3>Approver Menu</h3>
+    <ul>
+      <li><a routerLink="/view-policies">View Policies</a></li>
+      <li><a routerLink="/approve-claim">Approve Claim</a></li>
+    </ul>
+  </ng-container>
+
+  <!-- SuperUser Role Menu -->
+  <ng-container *ngIf="role === 'SuperUser'">
+    <h3>SuperUser Menu</h3>
+    <ul>
+      <li><a routerLink="/create-policy">Create Policy</a></li>
+      <li><a routerLink="/activate-registrations">Activate Registrations</a></li>
+    </ul>
+  </ng-container>
+
+  <!-- ReadOnly Role Menu -->
+  <ng-container *ngIf="role === 'ReadOnly'">
+    <h3>ReadOnly Menu</h3>
+    <ul>
+      <li><a routerLink="/view-all-policies">View All Policies</a></li>
+    </ul>
+  </ng-container>
+
+  <!-- If no role or invalid -->
+  <ng-container *ngIf="!role">
+    <p>No role selected. Please log in again.</p>
+  </ng-container>
+</div>
