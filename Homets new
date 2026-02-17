@@ -1,0 +1,23 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';  // For routerLink
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './home.html',
+  styleUrls: ['./home.css']
+})
+export class HomeComponent implements OnInit {
+
+  role: string = '';
+
+  constructor() {
+    console.log('Role value:', this.role);  // ← Prints role to console on load
+  }
+
+  ngOnInit() {
+    this.role = localStorage.getItem('role') || '';  // Get role from storage after login
+  }
+}
