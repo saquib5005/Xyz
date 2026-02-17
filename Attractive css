@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');  /* Import Poppins font */
+
+body {
+  font-family: 'Poppins', sans-serif;  /* Overall font for the website */
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;  /* Light gray-white background for the whole page */
+  height: 100vh;  /* Full viewport height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  display: flex;  /* Split layout: left form, right image */
+  width: 80%;  /* Responsive width */
+  max-width: 800px;  /* Max for large screens */
+  background-color: white;  /* White card background */
+  border-radius: 10px;  /* Rounded corners for modern look */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+  overflow: hidden;  /* Hide overflow for clean edges */
+}
+
+.form-section {
+  padding: 40px;  /* Space around form */
+  width: 50%;  /* Left half for form */
+}
+
+h2 {
+  color: #4CAF50;  /* Green heading */
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+input, select {
+  width: 100%;  /* Full width */
+  padding: 10px;  /* Comfortable padding */
+  margin-bottom: 15px;
+  border: 1px solid #ccc;  /* Light border */
+  border-radius: 5px;  /* Rounded for attractiveness */
+  font-family: 'Poppins', sans-serif;  /* Consistent font */
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;  /* Green button */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;  /* Bold for emphasis */
+}
+
+button:hover {
+  background-color: #45a049;  /* Darker green on hover for interactivity */
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+p {
+  color: red;
+  font-size: 12px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+}
+
+.image-section {
+  width: 50%;  /* Right half for image space */
+  background-color: #4CAF50;  /* Green placeholder if no image */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;  /* White text for placeholder */
+  font-size: 18px;
+  text-align: center;
+  background-image: url('your-image-link-here.jpg');  /* Add your image link here (replace with actual URL or path) */
+  background-size: cover;  /* Cover the space */
+  background-position: center;  /* Center the image */
+}
+
+@media (max-width: 768px) {  /* Responsive for mobile */
+  .container {
+    flex-direction: column;  /* Stack form and image vertically */
+  }
+  .form-section, .image-section {
+    width: 100%;
+  }
+  .image-section {
+    height: 200px;  /* Fixed height on small screens */
+  }
+}
