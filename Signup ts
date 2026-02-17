@@ -1,0 +1,42 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';  // ← Added for *ngIf
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';  // ← Added for [formGroup]
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-signup',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],  // ← Added to enable *ngIf and forms
+  templateUrl: './signup.html',
+  styleUrls: ['./signup.css']
+})
+export class SignupComponent {
+
+  signupForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
+    this.signupForm = fb.group({
+      fullName: ['', Validators.required],
+      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required],
+      role: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.signupForm.invalid) {
+      return;
+    }
+    this.http.post('http://localhost:8080/api/auth/signup', this.signupForm.value).subscribe({
+      next: (response) => {
+        alert('Signup successful');
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        alert(error.error);
+      }
+    });
+  }
+}
