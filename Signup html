@@ -1,0 +1,37 @@
+<div style="background-color: #f5f5f5; padding: 20px; max-width: 400px; margin: auto;">
+  <h2>Signup</h2>
+  <form [formGroup]="signupForm" (submit)="onSubmit()">
+    <div>
+      <label for="fullName">Full Name:</label>
+      <input id="fullName" formControlName="fullName">
+      <p *ngIf="signupForm.get('fullName')?.invalid">Full Name is required.</p>
+    </div>
+    <div>
+      <label for="username">Username:</label>
+      <input id="username" formControlName="username">
+      <p *ngIf="signupForm.get('username')?.invalid">Username is required.</p>
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input id="email" type="email" formControlName="email">
+      <p *ngIf="signupForm.get('email')?.invalid">Valid Email is required.</p>
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <input id="password" type="password" formControlName="password">
+      <p *ngIf="signupForm.get('password')?.invalid">Password is required.</p>
+    </div>
+    <div>
+      <label for="role">Role:</label>
+      <select id="role" formControlName="role">
+        <option value="">Select Role</option>
+        <option value="SuperUser">SuperUser</option>
+        <option value="Approver">Approver</option>
+        <option value="User">User</option>
+        <option value="ReadOnly">ReadOnly</option>
+      </select>
+      <p *ngIf="signupForm.get('role')?.invalid">Role is required.</p>
+    </div>
+    <button type="submit" [disabled]="signupForm.invalid">Signup</button>
+  </form>
+</div>
