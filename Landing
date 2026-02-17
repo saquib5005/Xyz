@@ -1,0 +1,6 @@
+<div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
+  <h1>Policy Issuance and Claims Processing Project</h1>
+  <p>This is a system for managing insurance policies and claims with roles like SuperUser, Approver, User, and ReadOnly.</p>
+  <p>Key Features: Login/Signup, Policy Wizard, Claim Submission/Approval, Read-Only View.</p>
+  <a href="/login" style="color: white; text-decoration: none;">Go to Login</a>
+</div>
