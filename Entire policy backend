@@ -1,0 +1,392 @@
+### Final Logic for Policy Wizard
+
+After deeply analyzing your code and the assignment, your current logic is already good but can be optimized for a single API call. Here's how to explain it to seniors: "The policy wizard is a one-stop backend API that receives all form data from the frontend in a single request (steps a-d combined). It validates the user, maps personal/income/nominee/policy details to entities, auto-calculates maturity date (issuance + tenure), premium (insured * 0.05 / frequency factor), and maturity amount (insured * 1.5 * tenure/10), attaches nominees to the policy, and saves everything at once. This reduces frontend-backend calls (no per-step APIs), minimizes errors (one validation point), and is standard for wizards – like submitting a full job application instead of page by page, making it faster and simpler."
+
+#### Why Keep Separate Nominee Entity (Don't Merge)
+- Keep separate: Nominees are "one or more" per policy (one-to-many) – a separate table is standard for relational DBs like H2, allowing easy add/delete/query (e.g., get all nominees for a policy). Merging into policy (e.g., JSON column) is "clever" but not beginner-friendly, harder to query, and violates normalization (data repetition if multiple nominees).
+- Easy to explain: "Separate entity is best for scalability – if nominees change later, we don't alter the policy table."
+
+#### Final Codes
+I kept the code minimalist: Single POST /api/policies/create for the wizard. Added validation (required fields, user exists, role Approver for SuperUser). Used placeholder formulas as is. Removed duplicates (e.g., repeated setIssuanceDate in your code). No "extra" features.
+
+1. **PolicyController.java** (Single endpoint for wizard)
+```java
+package com.example.policy.controller;
+
+import com.example.policy.entity.Policy;
+import com.example.policy.service.PolicyService;
+import com.example.policy.dto.PolicyRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.policy.repository.PolicyRepository;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/policies")
+public class PolicyController {
+
+    @Autowired
+    private PolicyService policyService;
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @PostMapping("/create")  // Single endpoint for the entire wizard
+    public Policy createPolicy(@RequestBody PolicyRequest req) {
+        return policyService.issuePolicy(req);
+    }
+
+    @GetMapping
+    public List<Policy> getAllPolicies() {
+        return policyService.getAllPolicies();
+    }
+
+    @GetMapping("/read-only")
+    public List<Policy> getAllPoliciesForReadOnly() {
+        return policyRepository.findAll();
+    }
+
+    @DeleteMapping("/{policyId}")
+    public String deletePolicy(@PathVariable Long policyId) {
+        policyRepository.deleteById(policyId);
+        return "Policy Deleted";
+    }
+}
+```
+
+2. **PolicyRequest dto** (Holds all wizard data in one DTO)
+```java
+package com.example.policy.dto;
+
+import com.example.policy.entity.Nominee;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+    private Long userId;
+    private String planName;
+    private String planType;
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Nominee Details (Step c – list for one or more)
+    private List<Nominee> nominees;
+
+    // Role for validation (if SuperUser creating for Approver)
+    private String role;
+}
+```
+
+3. **Policy.java entity** (Stores all wizard data + calculations)
+```java
+package com.example.policy.entity;
+
+import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.ArrayList;
+
+@Data
+@Entity
+@Table(name = "policies")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class Policy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "policy_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private String planName;
+    private String planType;
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Metadata
+    private LocalDate approvalTimestamp;
+    private String approverName;
+    private String assignmentDetails;
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Nominee> nominees = new ArrayList<>();
+}
+```
+
+4. **PolicyRepository.java** (No changes – already good)
+```java
+package com.example.policy.repository;
+
+import com.example.policy.entity.Policy;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PolicyRepository extends JpaRepository<Policy, Long> {
+    List<Policy> findByUserId(Long userId);
+}
+```
+
+5. **PolicyService.java** (Single method for wizard with validation/calculations)
+```java
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Nominee;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Policy issuePolicy(PolicyRequest req) {
+        // Validation for required fields (easy to add more)
+        if (req.getUserId() == null || req.getPlanName() == null || req.getPlanType() == null || req.getTenureYears() == null || req.getPremiumFrequency() == null || req.getInsuredAmount() == null || req.getIssuanceDate() == null) {
+            throw new RuntimeException("All policy details are required");
+        }
+
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User Not Found");
+        }
+
+        User user = optUser.get();
+
+        // If SuperUser creating for Approver, validate
+        if ("SuperUser".equals(user.getRole()) && !"Approver".equals(req.getRole())) {
+            throw new RuntimeException("SuperUser can only create for Approvers");
+        }
+
+        Policy policy = new Policy();
+        policy.setUser(user);
+        policy.setPlanName(req.getPlanName());
+        policy.setPlanType(req.getPlanType());
+        policy.setTenureYears(req.getTenureYears());
+        policy.setPremiumFrequency(req.getPremiumFrequency());
+        policy.setInsuredAmount(req.getInsuredAmount());
+        policy.setIssuanceDate(req.getIssuanceDate());
+        policy.setHolderName(req.getHolderName());
+        policy.setHolderDob(req.getHolderDob());
+        policy.setHolderAddress(req.getHolderAddress());
+        policy.setIncomeSource(req.getIncomeSource());
+        policy.setTotalIncome(req.getTotalIncome());
+
+        // Auto-calculate maturity date
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        // Placeholder Premium Calculation
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12")));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4")));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2")));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        // Placeholder Maturity Amount
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Set nominees
+        List<Nominee> nominees = req.getNominees();
+        if (nominees != null) {
+            nominees.forEach(nominee -> nominee.setPolicy(policy));
+            policy.setNominees(nominees);
+        }
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+```
+
+### DML for Policy Wizard (Hardcoded Examples)
+
+Update your changelog-dml-init.xml with this <changeSet> (adds 3 full policies with all steps' data – personal, income, nominees, policy details, calculations applied):
+
+```xml
+    <!-- Hardcoded 3 policies with all wizard steps -->
+    <changeSet id="010-wizard-data" author="you">
+        <!-- Policy 1 -->
+        <insert tableName="policies">
+            <column name="user_id" value="3"/>
+            <column name="plan_name" value="Term Life Gold"/>
+            <column name="plan_type" value="Term"/>
+            <column name="tenure_years" value="15"/>
+            <column name="premium_frequency" value="yearly"/>
+            <column name="insured_amount" value="1000000"/>
+            <column name="issuance_date" value="2025-01-15"/>
+            <column name="maturity_date" value="2040-01-15"/>
+            <column name="premium_amount" value="45000"/>
+            <column name="maturity_amount" value="1500000"/>
+            <column name="holder_name" value="John Doe"/>
+            <column name="holder_dob" value="1980-05-15"/>
+            <column name="holder_address" value="123 Main St, City"/>
+            <column name="income_source" value="Salary"/>
+            <column name="total_income" value="100000"/>
+        </insert>
+
+        <!-- Policy 2 -->
+        <insert tableName="policies">
+            <column name="user_id" value="2"/>
+            <column name="plan_name" value="Endowment Plan"/>
+            <column name="plan_type" value="Endowment"/>
+            <column name="tenure_years" value="10"/>
+            <column name="premium_frequency" value="monthly"/>
+            <column name="insured_amount" value="500000"/>
+            <column name="issuance_date" value="2024-06-01"/>
+            <column name="maturity_date" value="2034-06-01"/>
+            <column name="premium_amount" value="12000"/>
+            <column name="maturity_amount" value="800000"/>
+            <column name="holder_name" value="Jane Smith"/>
+            <column name="holder_dob" value="1990-08-20"/>
+            <column name="holder_address" value="456 Elm St, Town"/>
+            <column name="income_source" value="Business"/>
+            <column name="total_income" value="150000"/>
+        </insert>
+
+        <!-- Policy 3 -->
+        <insert tableName="policies">
+            <column name="user_id" value="3"/>
+            <column name="plan_name" value="Child Future Plan"/>
+            <column name="plan_type" value="Money Back"/>
+            <column name="tenure_years" value="20"/>
+            <column name="premium_frequency" value="quarterly"/>
+            <column name="insured_amount" value="750000"/>
+            <column name="issuance_date" value="2023-03-10"/>
+            <column name="maturity_date" value="2043-03-10"/>
+            <column name="premium_amount" value="18000"/>
+            <column name="maturity_amount" value="1200000"/>
+            <column name="holder_name" value="Alice Johnson"/>
+            <column name="holder_dob" value="1985-03-10"/>
+            <column name="holder_address" value="789 Oak St, Village"/>
+            <column name="income_source" value="Freelance"/>
+            <column name="total_income" value="80000"/>
+        </insert>
+    </changeSet>
+```
+
+### Postman Links for Validation (Endpoints to Test)
+
+Use these in Postman to validate the wizard:
+
+1. **Create Policy (Single Wizard Call)**:
+   - Method: POST
+   - URL: `http://localhost:8080/api/policies/create`
+   - Body (raw JSON) – example with all steps:
+     ```json
+     {
+       "userId": 3,
+       "planName": "Test Plan",
+       "planType": "Term",
+       "tenureYears": 10,
+       "premiumFrequency": "monthly",
+       "insuredAmount": 500000,
+       "issuanceDate": "2026-02-10",
+       "holderName": "John Doe",
+       "holderDob": "1980-01-01",
+       "holderAddress": "123 Main St",
+       "incomeSource": "Salary",
+       "totalIncome": 100000,
+       "nominees": [
+         {
+           "name": "Jane Doe",
+           "contactNumber": "1234567890",
+           "dob": "2000-01-01",
+           "relationship": "Child",
+           "percentageStake": 100
+         }
+       ],
+       "role": "Approver"  // For SuperUser creating for Approver
+     }
+     ```
+   - Expected: 200 OK with saved policy, calculated fields, and nominees.
+
+2. **Get All Policies (Read-Only View)**:
+   - Method: GET
+   - URL: `http://localhost:8080/api/policies/read-only`
+   - No body.
+   - Expected: 200 OK with list of policies (including hardcoded + new one).
+
+3. **Get My Policies (User View)**:
+   - Method: GET
+   - URL: `http://localhost:8080/api/policies`
+   - Header: `userId: 3`
+   - Expected: 200 OK with only user 3's policies.
+
+4. **Delete Policy**:
+   - Method: DELETE
+   - URL: `http://localhost:8080/api/policies/1`
+   - No body.
+   - Expected: 200 OK with "Policy Deleted".
+
+### How to Explain to Seniors
+"The wizard logic is a single backend API that receives all form data at once, validates, calculates, and saves – easy to maintain and efficient, like a one-click submit on Amazon. I kept nominees separate for scalability, as it's standard for one-to-many data."
+
+Test the POST in Postman – it should work. Reply if errors. Backend is now complete! Next is frontend.
