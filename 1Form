@@ -346,3 +346,13 @@ public class PolicyService {
   }
 }
 
+-----
+
+// In PolicyService.issuePolicy
+List<PolicyRequest.NomineeDetails> nominees = req.getNomineeDetails();
+if (nominees != null && !nominees.isEmpty()) {
+    String nomineesJson = mapper.writeValueAsString(nominees);  // Convert list to JSON string
+    policy.setNomineesJson(nomineesJson);
+} else {
+    policy.setNomineesJson("[]");  // Empty if no nominees
+}
