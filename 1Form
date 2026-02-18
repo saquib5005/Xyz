@@ -356,3 +356,55 @@ if (nominees != null && !nominees.isEmpty()) {
 } else {
     policy.setNomineesJson("[]");  // Empty if no nominees
 }
+
+------
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+public class PolicyResponse {
+    private Long id;
+    private String planName;
+    private String planType;
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+    // Exclude metadata fields here
+}
+
+---
+
+public PolicyResponse issuePolicy(PolicyRequest req) {
+    // Your existing code to validate, set fields, calculate...
+
+    Policy saved = policyRepository.save(policy);
+
+    // Map to DTO (exclude metadata)
+    PolicyResponse resp = new PolicyResponse();
+    resp.setId(saved.getId());
+    resp.setPlanName(saved.getPlanName());
+    resp.setPlanType(saved.getPlanType());
+    resp.setTenureYears(saved.getTenureYears());
+    resp.setPremiumFrequency(saved.getPremiumFrequency());
+    resp.setInsuredAmount(saved.getInsuredAmount());
+    resp.setIssuanceDate(saved.getIssuanceDate());
+    resp.setMaturityDate(saved.getMaturityDate());
+    resp.setPremiumAmount(saved.getPremiumAmount());
+    resp.setMaturityAmount(saved.getMaturityAmount());
+
+    return resp;
+}
+
+----
+@PostMapping("/create")
+public PolicyResponse createPolicy(@RequestBody PolicyRequest req) {
+    return policyService.issuePolicy(req);
+}
