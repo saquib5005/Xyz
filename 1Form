@@ -1,0 +1,348 @@
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+
+    private Long userId;
+
+    // Personal Details (Step a)
+    private PersonalDetails personalDetails;
+
+    // Income Details (Step b)
+    private IncomeDetails incomeDetails;
+
+    // Nominee Details (Step c – list for multiple)
+    private List<NomineeDetails> nomineeDetails;
+
+    // Policy Details (Step d)
+    private PolicyDetails policyDetails;
+
+    @Data
+    public static class PersonalDetails {
+        private String name;
+        private LocalDate dob;
+        private String address;
+    }
+
+    @Data
+    public static class IncomeDetails {
+        private String source;
+        private BigDecimal total;
+    }
+
+    @Data
+    public static class NomineeDetails {
+        private String name;
+        private String contactNumber;
+        private LocalDate dob;
+        private String relationship;
+        private Integer percentageStake;
+    }
+
+    @Data
+    public static class PolicyDetails {
+        private String planName;
+        private String planType;
+        private Integer tenureYears;
+        private String premiumFrequency;
+        private BigDecimal insuredAmount;
+        private LocalDate issuanceDate;
+    }
+}
+
+
+-------
+
+package com.example.policy.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@Entity
+@Table(name = "policies")
+public class Policy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "policy_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private String planName;
+    private String planType;
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Metadata
+    private LocalDate approvalTimestamp;
+    private String approverName;
+    private String assignmentDetails;
+
+    // Nominee Details (Step c – merged as JSON string)
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String nomineesJson;  // Stores List<NomineeDetails> as JSON string
+}
+
+-------------
+
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private final ObjectMapper mapper = new ObjectMapper();  // For JSON conversion of nominees
+
+    public Policy issuePolicy(PolicyRequest req) {
+        // Validation: Required fields (all steps)
+        if (req.getUserId() == null || req.getPersonalDetails() == null || req.getIncomeDetails() == null || req.getPolicyDetails() == null) {
+            throw new RuntimeException("All wizard steps are required");
+        }
+
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        Policy policy = new Policy();
+        policy.setUser(user);
+
+        // Step a: Personal Details
+        policy.setHolderName(req.getPersonalDetails().getName());
+        policy.setHolderDob(req.getPersonalDetails().getDob());
+        policy.setHolderAddress(req.getPersonalDetails().getAddress());
+
+        // Step b: Income Details
+        policy.setIncomeSource(req.getIncomeDetails().getSource());
+        policy.setTotalIncome(req.getIncomeDetails().getTotal());
+
+        // Step d: Policy Details
+        policy.setPlanName(req.getPolicyDetails().getPlanName());
+        policy.setPlanType(req.getPolicyDetails().getPlanType());
+        policy.setTenureYears(req.getPolicyDetails().getTenureYears());
+        policy.setPremiumFrequency(req.getPolicyDetails().getPremiumFrequency());
+        policy.setInsuredAmount(req.getPolicyDetails().getInsuredAmount());
+        policy.setIssuanceDate(req.getPolicyDetails().getIssuanceDate());
+
+        // Auto-calculations
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12")));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4")));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2")));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Step c: Nominee Details (merged as JSON)
+        List<PolicyRequest.NomineeDetails> nominees = req.getNomineeDetails();
+        if (nominees == null || nominees.isEmpty()) {
+            throw new RuntimeException("At least one nominee is required");
+        }
+        policy.setNomineesJson(mapper.writeValueAsString(nominees));  // Convert list to JSON string
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+--------
+
+    <!-- Policies Table -->
+    <changeSet id="002-policies" author="you">
+        <createTable tableName="policies">
+            <column name="policy_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="plan_name" type="VARCHAR(100)"/>
+            <column name="plan_type" type="VARCHAR(50)"/>
+            <column name="tenure_years" type="INT"/>
+            <column name="premium_frequency" type="VARCHAR(20)"/>
+            <column name="insured_amount" type="DECIMAL(15,2)"/>
+            <column name="issuance_date" type="DATE"/>
+            <column name="maturity_date" type="DATE"/>
+            <column name="premium_amount" type="DECIMAL(15,2)"/>
+            <column name="maturity_amount" type="DECIMAL(15,2)"/>
+            <column name="holder_name" type="VARCHAR(100)"/>
+            <column name="holder_dob" type="DATE"/>
+            <column name="holder_address" type="VARCHAR(255)"/>
+            <column name="income_source" type="VARCHAR(100)"/>
+            <column name="total_income" type="DECIMAL(15,2)"/>
+            <column name="nominees_json" type="TEXT"/>  // Merged nominees as JSON
+            <column name="approval_timestamp" type="TIMESTAMP"/>
+            <column name="approver_name" type="VARCHAR(100)"/>
+            <column name="assignment_details" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+
+------------
+
+    <!-- Hardcoded 3 policies with wizard data (merged nominees as JSON) -->
+    <changeSet id="010-wizard-data" author="you">
+        <!-- Policy 1 -->
+        <insert tableName="policies">
+            <column name="user_id" value="3"/>
+            <column name="plan_name" value="Term Life Gold"/>
+            <column name="plan_type" value="Term"/>
+            <column name="tenure_years" value="15"/>
+            <column name="premium_frequency" value="yearly"/>
+            <column name="insured_amount" value="1000000"/>
+            <column name="issuance_date" value="2025-01-15"/>
+            <column name="maturity_date" value="2040-01-15"/>
+            <column name="premium_amount" value="45000"/>
+            <column name="maturity_amount" value="1500000"/>
+            <column name="holder_name" value="John Doe"/>
+            <column name="holder_dob" value="1980-05-15"/>
+            <column name="holder_address" value="123 Main St, City"/>
+            <column name="income_source" value="Salary"/>
+            <column name="total_income" value="100000"/>
+            <column name="nominees_json" value='[{"name":"Jane Doe","contactNumber":"1234567890","dob":"2000-01-01","relationship":"Child","percentageStake":100}]'/>  // Merged as JSON
+        </insert>
+
+        <!-- Policy 2 -->
+        <insert tableName="policies">
+            <column name="user_id" value="2"/>
+            <column name="plan_name" value="Endowment Plan"/>
+            <column name="plan_type" value="Endowment"/>
+            <column name="tenure_years" value="10"/>
+            <column name="premium_frequency" value="monthly"/>
+            <column name="insured_amount" value="500000"/>
+            <column name="issuance_date" value="2024-06-01"/>
+            <column name="maturity_date" value="2034-06-01"/>
+            <column name="premium_amount" value="12000"/>
+            <column name="maturity_amount" value="800000"/>
+            <column name="holder_name" value="Jane Smith"/>
+            <column name="holder_dob" value="1990-08-20"/>
+            <column name="holder_address" value="456 Elm St, Town"/>
+            <column name="income_source" value="Business"/>
+            <column name="total_income" value="150000"/>
+            <column name="nominees_json" value='[{"name":"John Smith","contactNumber":"0987654321","dob":"1985-08-20","relationship":"Spouse","percentageStake":100}]'/>  // Merged as JSON
+        </insert>
+
+        <!-- Policy 3 -->
+        <insert tableName="policies">
+            <column name="user_id" value="3"/>
+            <column name="plan_name" value="Child Future Plan"/>
+            <column name="plan_type" value="Money Back"/>
+            <column name="tenure_years" value="20"/>
+            <column name="premium_frequency" value="quarterly"/>
+            <column name="insured_amount" value="750000"/>
+            <column name="issuance_date" value="2023-03-10"/>
+            <column name="maturity_date" value="2043-03-10"/>
+            <column name="premium_amount" value="18000"/>
+            <column name="maturity_amount" value="1200000"/>
+            <column name="holder_name" value="Alice Johnson"/>
+            <column name="holder_dob" value="1985-03-10"/>
+            <column name="holder_address" value="789 Oak St, Village"/>
+            <column name="income_source" value="Freelance"/>
+            <column name="total_income" value="80000"/>
+            <column name="nominees_json" value='[{"name":"Emily Johnson","contactNumber":"5551234567","dob":"2000-03-10","relationship":"Child","percentageStake":50},{"name":"Bob Johnson","contactNumber":"4449876543","dob":"1995-12-05","relationship":"Sibling","percentageStake":50}]'/>  // Merged as JSON with multiple
+        </insert>
+    </changeSet>
+
+-----------
+
+
+{
+  "userId": 3,
+  "personalDetails": {
+    "name": "John Doe",
+    "dob": "1980-01-01",
+    "address": "123 Main St"
+  },
+  "incomeDetails": {
+    "source": "Salary",
+    "total": 100000
+  },
+  "nomineeDetails": [
+    {
+      "name": "Jane Doe",
+      "contactNumber": "1234567890",
+      "dob": "2000-01-01",
+      "relationship": "Child",
+      "percentageStake": 50
+    },
+    {
+      "name": "Bob Doe",
+      "contactNumber": "0987654321",
+      "dob": "1995-02-02",
+      "relationship": "Sibling",
+      "percentageStake": 50
+    }
+  ],
+  "policyDetails": {
+    "planName": "Test Plan",
+    "planType": "Term",
+    "tenureYears": 10,
+    "premiumFrequency": "monthly",
+    "insuredAmount": 500000,
+    "issuanceDate": "2026-02-10"
+  }
+}
+
