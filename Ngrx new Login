@@ -166,6 +166,86 @@ export class LoginComponent {
   }
 }
 
+----
+
+<div class="container">
+  <h2>Login</h2>
+  <form [formGroup]="loginForm" (submit)="onSubmit()">
+    <div>
+      <label for="username">Username:</label>
+      <p-inputText id="username" formControlName="username" placeholder="Enter username"></p-inputText>
+      <small *ngIf="loginForm.get('username')?.invalid" class="p-error">Username is required.</small>
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <p-password id="password" formControlName="password" placeholder="Enter password"></p-password>
+      <small *ngIf="loginForm.get('password')?.invalid" class="p-error">Password is required.</small>
+    </div>
+    <div>
+      <label for="role">Role:</label>
+      <p-dropdown id="role" formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select role"></p-dropdown>
+      <small *ngIf="loginForm.get('role')?.invalid" class="p-error">Role is required.</small>
+    </div>
+    <p-button label="Login" type="submit" [disabled]="loginForm.invalid"></p-button>
+  </form>
+</div>
+
+----
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');  /* Import Poppins font */
+
+body {
+  font-family: 'Poppins', sans-serif;  /* Overall font for the website */
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;  /* Light grey background for the whole page */
+  height: 100vh;  /* Full viewport height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  background-color: white;  /* White form background */
+  padding: 20px;
+  max-width: 400px;
+  border: 1px solid #ccc;  /* Light border */
+  border-radius: 5px;  /* Rounded corners */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);  /* Subtle shadow */
+}
+
+h2 {
+  color: #4CAF50;  /* Green heading */
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.p-inputtext, .p-password, .p-dropdown {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.p-button {
+  background-color: #4CAF50;  /* Green button */
+  border: none;
+}
+
+.p-button:enabled:hover {
+  background-color: #45a049;  /* Darker green on hover */
+}
+
+.p-error {
+  color: red;
+  font-size: 12px;
+  margin-top: -5px;
+  margin-bottom: 10px;
+}
+
 
 
 
