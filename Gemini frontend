@@ -14,3 +14,45 @@
   },
   ...
 }
+-----
+
+/* 1. Import PrimeNG and PrimeIcons core CSS */
+@import "primeng/resources/themes/nova/theme.css";
+@import "primeng/resources/primeng.css";
+@import "primeicons/primeicons.css";
+
+/* 2. BNP Paribas Custom Green Theme Overrides */
+:root {
+    --primary-color: #00915a; /* BNP Paribas Green 600 */
+    --primary-color-text: #ffffff;
+    --primary-color-hover: #007045; /* BNP Paribas Green 800 */
+}
+
+/* 3. Standard Clean Background */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+----
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, ButtonModule], // We imported ButtonModule here
+  template: `
+    <div style="padding: 2rem; text-align: center;">
+      <h2>PrimeNG is Ready</h2>
+      <p-button label="BNP Paribas Theme Test" icon="pi pi-check"></p-button>
+    </div>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {
+  title = 'policy-portal';
+}
+
