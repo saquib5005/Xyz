@@ -312,6 +312,70 @@ export class LoginComponent {
 </div>
 
 
+-----<div class="container">
+  <h2>Login</h2>
+  <form [formGroup]="loginForm" (submit)="onSubmit()">
+    <div class="p-field">
+      <label for="username">Username <span class="required">*</span></label>
+      <p-inputText id="username" formControlName="username" placeholder="Enter username"></p-inputText>
+    </div>
+    <div class="p-field">
+      <label for="password">Password <span class="required">*</span></label>
+      <p-password id="password" formControlName="password" placeholder="Enter password" [feedback]="false"></p-password>
+    </div>
+    <div class="p-field">
+      <label for="role">Role <span class="required">*</span></label>
+      <p-dropdown id="role" formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select role"></p-dropdown>
+    </div>
+    <p-button label="Login" type="submit" [disabled]="loginForm.invalid" styleClass="p-button-raised p-button-rounded"></p-button>
+  </form>
+</div>
+
+------
+
+.container {
+  background-color: white;
+  padding: 20px;
+  max-width: 400px;
+  margin: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);  /* Subtle shadow for depth */
+  font-family: 'Poppins', sans-serif;  /* Beginner-friendly font */
+}
+
+h2 {
+  color: #4CAF50;  /* Green heading */
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.p-field {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.required {
+  color: red;  /* Red asterisk for required */
+  font-weight: bold;
+}
+
+.p-button {
+  width: 100%;
+  background-color: #4CAF50;  /* Green button */
+}
+
+.p-button:disabled {
+  background-color: #ccc;
+}
+
+.p-inputtext, .p-password, .p-dropdown {
+  width: 100%;
+}
 
 
 
