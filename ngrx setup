@@ -1,0 +1,40 @@
+import { createAction, props } from '@ngrx/store';
+
+export const setRole = createAction('[Role] Set Role', props<{ role: string }>());
+-------------
+
+import { createReducer, on } from '@ngrx/store';
+import { setRole } from './role.actions';
+
+export interface State {
+  role: string;
+}
+
+export const initialState: State = {
+  role: ''
+};
+
+export const roleReducer = createReducer(
+  initialState,
+  on(setRole, (state, { role }) => ({ ...state, role }))
+);
+------
+
+import { createSelector } from '@ngrx/store';
+import { State as AppState } from './role.reducer';  // Adjust if state is global
+
+export const selectRole = (state: { app: AppState }) => state.app.role;
+
+-----------------
+
+import { provideState, provideStore } from '@ngrx/store';
+import { roleReducer } from './store/role.reducer';  // Adjust path
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideStore(),
+    provideState('app', roleReducer)  // Add app state with role reducer
+  ]
+};
+---
