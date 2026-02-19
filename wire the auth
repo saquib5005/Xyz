@@ -1,0 +1,90 @@
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  // Lazy load the standalone component for better performance
+  { 
+    path: 'login', 
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) 
+  },
+  // If the user goes to the empty route (localhost:4200), redirect them to the login page
+  { path: '', redirectTo: 'login', pathMatch: 'full' }
+];
+------
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  template: `<router-outlet></router-outlet>`
+})
+export class AppComponent {}
+----------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select'; 
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, Card, InputText, Password, Button, Select],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
+})
+export class LoginComponent {
+  loginForm: FormGroup;
+  
+  // The exact roles from your problem statement
+  roles = [
+    { label: 'Approver', value: 'Approver' },
+    { label: 'User', value: 'User' },
+    { label: 'Read-Only', value: 'Read-Only' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    this.loginForm = this.fb.group({
+      role: ['', Validators.required],
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      console.log('Login Form Data:', this.loginForm.value);
+      // In the next step, we will add the routing logic to navigate based on the role here
+    }
+----------
+<div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa;">
+  <p-card header="BNP Paribas Portal" [style]="{ width: '25rem', padding: '1rem' }">
+    
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <label for="role" style="font-weight: 600;">Role</label>
+        <p-select formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select your Role" [style]="{'width':'100%'}"></p-select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <label for="username" style="font-weight: 600;">Username</label>
+        <input pInputText id="username" formControlName="username" placeholder="Enter username" style="width: 100%;" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <label for="password" style="font-weight: 600;">Password</label>
+        <p-password formControlName="password" [toggleMask]="true" placeholder="Enter password" [inputStyle]="{'width':'100%'}" [style]="{'width':'100%'}"></p-password>
+      </div>
+
+      <p-button label="Log In" type="submit" [disabled]="loginForm.invalid" [style]="{'width':'100%', 'margin-top': '1rem'}"></p-button>
+      
+    </form>
+  </p-card>
+</div>
+  }
+}
