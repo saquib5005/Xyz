@@ -87,4 +87,151 @@ export class LoginComponent {
   </p-card>
 </div>
   }
+------
+
+<div class="login-container">
+  
+  <div class="branding-section">
+    <div class="logo-placeholder">
+      <i class="pi pi-shield" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+      <h1>BNP Paribas Portal</h1>
+      <p>Secure Policy Issuance & Claims Processing</p>
+    </div>
+  </div>
+  
+  <div class="form-section">
+    <p-card [style]="{ width: '100%', maxWidth: '28rem', border: 'none', boxShadow: 'none' }">
+      
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <h2 style="margin: 0; font-size: 1.8rem; color: #333;">Welcome Back</h2>
+        <p style="color: #6c757d; margin-top: 0.5rem;">Please enter your details to sign in.</p>
+      </div>
+      
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        
+        <div class="field-group">
+          <label for="role" class="field-label">Role <span class="required-asterisk">*</span></label>
+          <p-select formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select your Role" styleClass="w-full"></p-select>
+          <small class="p-error" *ngIf="loginForm.get('role')?.invalid && loginForm.get('role')?.touched">
+            Role is required.
+          </small>
+        </div>
+
+        <div class="field-group">
+          <label for="username" class="field-label">Username <span class="required-asterisk">*</span></label>
+          <input pInputText id="username" formControlName="username" placeholder="Enter username" class="w-full" />
+          <small class="p-error" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+            Username is required.
+          </small>
+        </div>
+
+        <div class="field-group">
+          <label for="password" class="field-label">Password <span class="required-asterisk">*</span></label>
+          <p-password formControlName="password" [toggleMask]="true" [feedback]="false" placeholder="Enter password" styleClass="w-full" inputStyleClass="w-full"></p-password>
+          <small class="p-error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            Password is required.
+          </small>
+        </div>
+
+        <p-button label="Log In" type="submit" [disabled]="loginForm.invalid" styleClass="w-full" [style]="{'margin-top': '1.5rem'}"></p-button>
+        
+      </form>
+    </p-card>
+  </div>
+
+</div>
+
+-------------
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #ffffff;
+  margin: -8px; /* Offset default body margin just in case */
 }
+
+/* Left side branding */
+.branding-section {
+  flex: 1;
+  background: linear-gradient(135deg, #00915a 0%, #00462c 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+
+  h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+  
+  p {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+}
+
+/* Right side form */
+.form-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-weight: 600;
+  color: #333333;
+}
+
+.required-asterisk {
+  color: #e24c4c; /* Professional red for errors/required */
+  font-weight: bold;
+}
+
+/* Utility classes to ensure PrimeNG components stretch fully */
+::ng-deep .w-full {
+  width: 100% !important;
+}
+
+/* Hide PrimeNG default margins on the select/password components */
+::ng-deep .p-select, ::ng-deep .p-password input {
+  width: 100%;
+}
+
+---------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
