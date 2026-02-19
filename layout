@@ -1,0 +1,199 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
+// PrimeNG Menu Imports
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+
+@Component({
+  selector: 'app-layout',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, Menu],
+  templateUrl: './layout.component.html',
+  styleUrl: './layout.component.scss'
+})
+export class LayoutComponent implements OnInit {
+  menuItems: MenuItem[] | undefined;
+  
+  // Option A: Hardcoded visual test. Change this to 'Approver', 'Super-user', or 'Read-Only' to test menus!
+  currentRole: string = 'User'; 
+
+  ngOnInit() {
+    this.setMenuForRole(this.currentRole);
+  }
+
+  // Strictly maps your Problem Statement roles to the Sidebar UI
+  setMenuForRole(role: string) {
+    if (role === 'User') {
+      this.menuItems = [
+        { label: 'View Policies', icon: 'pi pi-list' },
+        { label: 'Apply Claim', icon: 'pi pi-file-edit' }
+      ];
+    } else if (role === 'Approver') {
+      this.menuItems = [
+        { label: 'View Policies', icon: 'pi pi-list' },
+        { label: 'Approve Claim', icon: 'pi pi-check-circle' }
+      ];
+    } else if (role === 'Super-user') {
+      this.menuItems = [
+        { label: 'Create Policy', icon: 'pi pi-plus' },
+        { label: 'Activate Registrations', icon: 'pi pi-user-edit' }
+      ];
+    } else if (role === 'Read-Only') {
+      this.menuItems = [
+        { label: 'View All Policies', icon: 'pi pi-eye' }
+      ];
+    }
+---------------
+<div class="dashboard-container">
+  
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>BNP Portal</h2>
+      <span class="role-badge">{{ currentRole }}</span>
+    </div>
+    
+    <div class="sidebar-menu">
+      <p-menu [model]="menuItems" styleClass="w-full"></p-menu>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="content-header">
+      <h3 style="margin: 0; color: #333;">Dashboard Overview</h3>
+    </div>
+    
+    <div class="content-body">
+      <router-outlet></router-outlet>
+      
+      <div class="placeholder-card">
+        <h4>Welcome, {{ currentRole }}!</h4>
+        <p>Your sidebar menu has been successfully generated based on your role. Select an option on the left to begin.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+-------
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  margin: -8px; 
+  background-color: #f4f6f8;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #00915a 0%, #007045 100%);
+  color: white;
+  
+  h2 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+  .role-badge { display: inline-block; margin-top: 0.5rem; background: rgba(255,255,255,0.2); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;}
+}
+
+.sidebar-menu {
+  padding: 1rem;
+  flex-grow: 1;
+}
+
+/* Force PrimeNG menu to fit our design */
+::ng-deep .p-menu {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.content-header {
+  height: 70px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+.content-body {
+  padding: 2rem;
+}
+
+.placeholder-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-left: 4px solid #00915a;
+}
+
+-----------------
+
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  { 
+    path: 'login', 
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) 
+  },
+  { 
+    path: 'signup', 
+    loadComponent: () => import('./features/auth/signup/signup.component').then(m => m.SignupComponent) 
+  },
+  // NEW: Dashboard Route
+  { 
+    path: 'dashboard', 
+    loadComponent: () => import('./features/dashboard/layout/layout.component').then(m => m.LayoutComponent) 
+  },
+  { path: '', redirectTo: 'login', pathMatch: 'full' }
+];
+
+--------------
+
+// ... Add Router to your imports at the top
+import { Router, RouterLink } from '@angular/router';
+
+// ... Inside your class:
+export class LoginComponent {
+  // ... existing code ...
+
+  // Inject the Router in the constructor
+  constructor(private fb: FormBuilder, private router: Router) {
+    this.loginForm = this.fb.group({
+      role: ['', Validators.required],
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      // Temporarily bypass real auth for our visual test
+      this.router.navigate(['/dashboard']); 
+    }
+  }
+}
+
+------------
+
+
+
+
+
+  }
+}
