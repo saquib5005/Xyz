@@ -96,4 +96,11 @@ export const appConfig: ApplicationConfig = {
     })
   ]
 };
+---
+
+<div style="padding: 2rem; text-align: center;">
+  <h2>System Check</h2>
+  <p-button label="BNP Paribas Theme Ready" icon="pi pi-check"></p-button>
+</div>
+<router-outlet></router-outlet>
 
