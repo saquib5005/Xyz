@@ -55,4 +55,45 @@ import { ButtonModule } from 'primeng/button';
 export class AppComponent {
   title = 'policy-portal';
 }
+----
+
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
+import { definePreset } from '@primeuix/themes';
+
+// Define our custom BNP Paribas Green preset based on the modern Aura theme
+const BNPParibasPreset = definePreset(Aura, {
+  semantic: {
+    primary: {
+      50: '#eaf4f1',
+      100: '#cbe4db',
+      200: '#9bc9b9',
+      300: '#6aae97',
+      400: '#43997d',
+      500: '#00915a', // BNP Green 600
+      600: '#008351',
+      700: '#007045', // BNP Green 800
+      800: '#005635',
+      900: '#00462c',
+      950: '#002818'
+    }
+  }
+});
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideAnimationsAsync(),
+    providePrimeNG({
+      theme: {
+        preset: BNPParibasPreset,
+        options: { darkModeSelector: 'none' } // Force light theme for standard enterprise UI
+      }
+    })
+  ]
+};
 
