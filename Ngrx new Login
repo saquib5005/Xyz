@@ -113,6 +113,58 @@ label {
   background-color: #1b5e20;  // Green 800
 }
 
+------
+
+import { Component } from '@angular/core';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { DropdownModule } from 'primeng/dropdown';  // PrimeNG for role dropdown
+import { InputTextModule } from 'primeng/inputtext';  // PrimeNG for username input
+import { PasswordModule } from 'primeng/password';  // PrimeNG for password input
+import { ButtonModule } from 'primeng/button';  // PrimeNG for submit button
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, DropdownModule, InputTextModule, PasswordModule, ButtonModule],
+  templateUrl: './login.html',
+  styleUrls: ['./login.css']
+})
+export class LoginComponent {
+
+  loginForm: FormGroup;
+  roles = [ 
+    { label: 'SuperUser', value: 'SuperUser' },
+    { label: 'Approver', value: 'Approver' },
+    { label: 'User', value: 'User' },
+    { label: 'ReadOnly', value: 'ReadOnly' }
+  ];
+
+  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
+    this.loginForm = fb.group({
+      username: ['', Validators.required],
+      password: ['', Validators.required],
+      role: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.invalid) {
+      return;
+    }
+    this.http.post('http://localhost:8080/api/auth/login', this.loginForm.value).subscribe({
+      next: (response: any) => {
+        alert('Login successful');
+        this.router.navigate(['/home']);
+      },
+      error: (error) => {
+        alert(error.error);
+      }
+    });
+  }
+}
 
 
 
