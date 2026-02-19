@@ -1,0 +1,142 @@
+import { Injectable, signal } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root' // This makes the store globally available to the whole app
+})
+export class AuthService {
+  
+  // This is a Signal. It holds your state and reacts instantly when changed.
+  private userRoleState = signal<string>(''); 
+
+  // Save the role when the user logs in
+  setRole(role: string) {
+    this.userRoleState.set(role);
+  }
+
+  // Retrieve the role when the dashboard loads
+  getRole(): string {
+    return this.userRoleState();
+  }
+}
+-----------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { AuthService } from '../auth.service'; // <--- 1. Import the service
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
+})
+export class LoginComponent {
+  loginForm: FormGroup;
+  
+  roles = [
+    { label: 'Approver', value: 'Approver' },
+    { label: 'User', value: 'User' },
+    { label: 'Read-Only', value: 'Read-Only' },
+    { label: 'Super-user', value: 'Super-user' } // Added Super-user so you can test it!
+  ];
+
+  // 2. Inject AuthService here
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
+    this.loginForm = this.fb.group({
+      role: ['', Validators.required],
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      // 3. Extract the exact role selected from the dropdown
+      const selectedRole = this.loginForm.value.role;
+      
+      // 4. Save it into our global state
+      this.authService.setRole(selectedRole);
+      
+      // 5. Navigate to the dashboard
+      this.router.navigate(['/dashboard']); 
+    } else {
+      this.loginForm.markAllAsTouched(); 
+    }
+  }
+}
+
+----------
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, Router } from '@angular/router';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+import { AuthService } from '../../auth/auth.service'; // <--- 1. Import the service
+
+@Component({
+  selector: 'app-layout',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, Menu],
+  templateUrl: './layout.component.html',
+  styleUrl: './layout.component.scss'
+})
+export class LayoutComponent implements OnInit {
+  menuItems: MenuItem[] | undefined;
+  currentRole: string = ''; 
+
+  // 2. Inject AuthService and Router
+  constructor(private authService: AuthService, private router: Router) {}
+
+  ngOnInit() {
+    // 3. Read the role from our global state
+    this.currentRole = this.authService.getRole();
+
+    // Security check: If they bypassed login (role is empty), kick them back to login page
+    if (!this.currentRole) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    // 4. Generate the menus dynamically based on the state
+    this.setMenuForRole(this.currentRole);
+  }
+
+  setMenuForRole(role: string) {
+    if (role === 'User') {
+      this.menuItems = [
+        { label: 'View Policies', icon: 'pi pi-list' },
+        { label: 'Apply Claim', icon: 'pi pi-file-edit' }
+      ];
+    } else if (role === 'Approver') {
+      this.menuItems = [
+        { label: 'View Policies', icon: 'pi pi-list' },
+        { label: 'Approve Claim', icon: 'pi pi-check-circle' }
+      ];
+    } else if (role === 'Super-user') {
+      this.menuItems = [
+        { label: 'Create Policy', icon: 'pi pi-plus' },
+        { label: 'Activate Registrations', icon: 'pi pi-user-edit' }
+      ];
+    } else if (role === 'Read-Only') {
+      this.menuItems = [
+        { label: 'View All Policies', icon: 'pi pi-eye' }
+      ];
+    }
+  }
+}
+
+-------------
+
+
+
+
+
