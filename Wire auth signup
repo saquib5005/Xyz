@@ -1,0 +1,197 @@
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router'; // Required for navigation back to login
+// PrimeNG UI Components
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+
+@Component({
+  selector: 'app-signup',
+  standalone: true,
+  // Ensure all modules are imported here
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select],
+  templateUrl: './signup.component.html',
+  styleUrl: './signup.component.scss'
+})
+export class SignupComponent {
+  signupForm: FormGroup;
+  
+  // Roles allowed for signup based on your problem statement
+  roles = [
+    { label: 'Admin / Approver', value: 'Approver' },
+    { label: 'User', value: 'User' },
+    { label: 'Read-Only', value: 'Read-Only' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    // 5 fields: Name, Email, Username, Password, Role
+    this.signupForm = this.fb.group({
+      name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]], // Added Email format validation
+      username: ['', Validators.required],
+      password: ['', Validators.required],
+      role: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.signupForm.valid) {
+      console.log('Signup Form Data:', this.signupForm.value);
+      // Data will be sent to Spring Boot backend later
+    }
+  }
+}
+
+---------
+<div class="login-container">
+  
+  <div class="branding-section">
+    <div class="logo-placeholder">
+      <i class="pi pi-user-plus" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+      <h1>Join the Portal</h1>
+      <p>Request access to the Policy & Claims system.</p>
+    </div>
+  </div>
+  
+  <div class="form-section">
+    <p-card [style]="{ width: '100%', maxWidth: '32rem', border: 'none', boxShadow: 'none' }">
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0; font-size: 1.8rem; color: #333;">Create Account</h2>
+        <p style="color: #6c757d; margin-top: 0.5rem;">Fill in your details to register.</p>
+      </div>
+      
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="login-form">
+        
+        <div class="field-group">
+          <label for="name" class="field-label">Full Name <span class="required-asterisk">*</span></label>
+          <input pInputText id="name" formControlName="name" placeholder="Enter your full name" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('name')?.invalid && signupForm.get('name')?.touched">Name is required.</small>
+        </div>
+
+        <div class="field-group">
+          <label for="email" class="field-label">Email Address <span class="required-asterisk">*</span></label>
+          <input pInputText id="email" type="email" formControlName="email" placeholder="Enter your email" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('required') && signupForm.get('email')?.touched">Email is required.</small>
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('email') && signupForm.get('email')?.touched">Enter a valid email address.</small>
+        </div>
+
+        <div class="field-group">
+          <label for="role" class="field-label">Requested Role <span class="required-asterisk">*</span></label>
+          <p-select formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select a Role" styleClass="w-full"></p-select>
+          <small class="p-error" *ngIf="signupForm.get('role')?.invalid && signupForm.get('role')?.touched">Role is required.</small>
+        </div>
+
+        <div class="field-group">
+          <label for="username" class="field-label">Username <span class="required-asterisk">*</span></label>
+          <input pInputText id="username" formControlName="username" placeholder="Choose a username" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('username')?.invalid && signupForm.get('username')?.touched">Username is required.</small>
+        </div>
+
+        <div class="field-group">
+          <label for="password" class="field-label">Password <span class="required-asterisk">*</span></label>
+          <p-password formControlName="password" [toggleMask]="true" [feedback]="true" placeholder="Create a password" styleClass="w-full" inputStyleClass="w-full"></p-password>
+          <small class="p-error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">Password is required.</small>
+        </div>
+
+        <p-button label="Sign Up" type="submit" [disabled]="signupForm.invalid" styleClass="w-full" [style]="{'margin-top': '1rem'}"></p-button>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <span style="color: #6c757d;">Already have an account? </span>
+            <a routerLink="/login" style="color: #00915a; font-weight: 600; text-decoration: none; cursor: pointer;">
+                Login here
+            </a>
+        </div>
+        
+      </form>
+    </p-card>
+  </div>
+
+</div>
+-----------
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #ffffff;
+  margin: -8px; 
+}
+
+/* Left side branding */
+.branding-section {
+  flex: 1;
+  background: linear-gradient(135deg, #00915a 0%, #00462c 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+
+  h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+  
+  p {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+}
+
+/* Right side form */
+.form-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-weight: 600;
+  color: #333333;
+}
+
+.required-asterisk {
+  color: #e24c4c;
+  font-weight: bold;
+}
+
+/* Utility classes */
+::ng-deep .w-full {
+  width: 100% !important;
+}
+
+::ng-deep .p-select, ::ng-deep .p-password input {
+  width: 100%;
+}
+
+--------
+
+
+
+
+
+
+
+
+
