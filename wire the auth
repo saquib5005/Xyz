@@ -218,7 +218,19 @@ export class LoginComponent {
 
 ---------------
 
+<p-button label="Log In" type="submit" [disabled]="loginForm.invalid" styleClass="w-full" [style]="{'margin-top': '1.5rem'}"></p-button>
 
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <span style="color: #6c757d;">New User? </span>
+            <a routerLink="/signup" style="color: #00915a; font-weight: 600; text-decoration: none; cursor: pointer;">
+                Signup here
+            </a>
+        </div>
+        
+      </form>
+    </p-card>
+  </div>
+</div>
 
 
 
