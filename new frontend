@@ -1,0 +1,62 @@
+/* 1. Local import from your node_modules - 100% firewall safe */
+@import "primeicons/primeicons.css";
+
+/* 2. Enterprise-safe system fonts (No Google Fonts allowed) */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #333333;
+}
+-----
+
+
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
+import { definePreset } from '@primeuix/themes';
+
+// Local theme generation (BNP Paribas Green)
+const BNPParibasPreset = definePreset(Aura, {
+  semantic: {
+    primary: {
+      500: '#00915a', // Green 600
+      700: '#007045'  // Green 800
+    }
+  }
+});
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideAnimationsAsync(), // Required for PrimeNG dropdowns/dialogs
+    providePrimeNG({
+      theme: {
+        preset: BNPParibasPreset,
+        options: { darkModeSelector: 'none' } // Force standard light theme
+      }
+    })
+------------
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { Button } from 'primeng/button';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet, Button], // In standard Angular 21, standalone is true by default
+  template: `
+    <div style="padding: 2rem; text-align: center;">
+      <h2>Corporate Network Secure Setup</h2>
+      <p-button label="System Ready" icon="pi pi-shield"></p-button>
+    </div>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+
+  ]
+};
