@@ -87,3 +87,52 @@ public class Plan {
             <column name="insured_amount" value="2000000"/>
         </insert>
     </changeSet>
+
+----------
+
+<changeSet id="011-plans-data" author="you">
+    <!-- Plan 1: Life Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Life Secure Plus"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="tenure_years" value="20"/>
+        <column name="premium_frequency" value="yearly"/>
+        <column name="insured_amount" value="1500000"/>
+    </insert>
+
+    <!-- Plan 2: Health Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Health Protect"/>
+        <column name="plan_type" value="Health Insurance"/>
+        <column name="tenure_years" value="5"/>
+        <column name="premium_frequency" value="monthly"/>
+        <column name="insured_amount" value="500000"/>
+    </insert>
+
+    <!-- Plan 3: Property Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Home Guard"/>
+        <column name="plan_type" value="Property Insurance"/>
+        <column name="tenure_years" value="10"/>
+        <column name="premium_frequency" value="quarterly"/>
+        <column name="insured_amount" value="1000000"/>
+    </insert>
+
+    <!-- Plan 4: Motor Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Auto Safe"/>
+        <column name="plan_type" value="Motor Insurance"/>
+        <column name="tenure_years" value="3"/>
+        <column name="premium_frequency" value="half-yearly"/>
+        <column name="insured_amount" value="750000"/>
+    </insert>
+
+    <!-- Plan 5: Mixed Life Insurance (additional entry) -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Family Life Cover"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="tenure_years" value="25"/>
+        <column name="premium_frequency" value="yearly"/>
+        <column name="insured_amount" value="2000000"/>
+    </insert>
+</changeSet>
