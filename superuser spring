@@ -146,3 +146,29 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PlanRepository extends JpaRepository<Plan, Long> {
 }
+
+------------
+
+package com.example.policyengine.service;
+
+import com.example.policyengine.entity.Plan;
+import com.example.policyengine.repository.PlanRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class PlanService {
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    public Plan createPlan(Plan plan) {
+        return planRepository.save(plan);
+    }
+
+    public List<Plan> getAllPlans() {
+        return planRepository.findAll();
+    }
+}
