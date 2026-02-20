@@ -168,7 +168,38 @@ public class PlanService {
         return planRepository.save(plan);
     }
 
+
     public List<Plan> getAllPlans() {
         return planRepository.findAll();
+    }
+}
+
+
+--------------
+
+package com.example.policyengine.controller;
+
+import com.example.policyengine.entity.Plan;
+import com.example.policyengine.service.PlanService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/plans")
+public class PlanController {
+
+    @Autowired
+    private PlanService planService;
+
+    @PostMapping("/create")
+    public Plan createPlan(@RequestBody Plan plan) {
+        return planService.createPlan(plan);
+    }
+
+    @GetMapping
+    public List<Plan> getAllPlans() {
+        return planService.getAllPlans();
     }
 }
