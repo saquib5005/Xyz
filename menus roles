@@ -94,3 +94,19 @@ export class PolicyListComponent {
     }
   }
 }
+
+------------
+
+<div class="main-content">
+    
+    <div class="content-header" style="height: auto; padding: 1.5rem 2rem; flex-direction: column; align-items: flex-start;">
+      <h2 style="margin: 0; font-weight: 700; color: #333;">Welcome!</h2>
+      <p style="margin: 4px 0 0 0; color: #666; font-size: 1.1rem;">Here is your personalized dashboard</p>
+    </div>
+    
+    <div class="content-body">
+      <router-outlet></router-outlet>
+    </div>
+
+  </div>
+</div>
