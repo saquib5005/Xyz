@@ -1,0 +1,96 @@
+// NEW: Child routes load inside the LayoutComponent's <router-outlet>
+    children: [
+      { path: 'policies', loadComponent: () => import('./features/dashboard/policy-list/policy-list.component').then(m => m.PolicyListComponent) },
+      { path: 'apply-claim', loadComponent: () => import('./features/dashboard/apply-claim/apply-claim.component').then(m => m.ApplyClaimComponent) },
+      // If they just go to /dashboard, automatically show the policies page
+      { path: '', redirectTo: 'policies', pathMatch: 'full' }
+    ]
+  },
+
+  -------
+
+  setMenuForRole(role: string) {
+    if (role === 'User') {
+      this.menuItems = [
+        // NEW: Added routerLink to point to our new child routes
+        { label: 'View Policies', icon: 'pi pi-list', routerLink: ['/dashboard/policies'] },
+        { label: 'Apply Claim', icon: 'pi pi-file-edit', routerLink: ['/dashboard/apply-claim'] }
+      ];
+    } else if (role === 'Approver') {
+      this.menuItems = [
+        { label: 'View Policies', icon: 'pi pi-list', routerLink: ['/dashboard/policies'] },
+        { label: 'Approve Claim', icon: 'pi pi-check-circle' } // We will build this later
+      ];
+    } else if (role === 'Super-user' || role === 'Superuser') {
+      this.menuItems = [
+        { label: 'Create Policy', icon: 'pi pi-plus' }, // We will build this later
+        { label: 'Activate Registrations', icon: 'pi pi-user-edit' }
+      ];
+    } else if (role === 'Read-Only' || role === 'ReadOnly') {
+      this.menuItems = [
+        { label: 'View All Policies', icon: 'pi pi-eye', routerLink: ['/dashboard/policies'] }
+      ];
+    } else {
+      this.menuItems = []; 
+    }
+  }
+--------
+  import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table'; // PrimeNG Data Table
+import { TagModule } from 'primeng/tag';     // PrimeNG Status Tags
+
+@Component({
+  selector: 'app-policy-list',
+  standalone: true,
+  imports: [CommonModule, TableModule, TagModule],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h2 style="margin-top: 0; color: #333;">Active Policies</h2>
+      <p style="color: #666; margin-bottom: 2rem;">Overview of all insurance policies currently registered in the system.</p>
+
+      <p-table [value]="policies" [paginator]="true" [rows]="5" styleClass="p-datatable-striped">
+        <ng-template #header>
+          <tr>
+            <th>Policy ID</th>
+            <th>Type</th>
+            <th>Holder Name</th>
+            <th>Premium</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-policy>
+          <tr>
+            <td style="font-weight: 600;">{{ policy.id }}</td>
+            <td>{{ policy.type }}</td>
+            <td>{{ policy.holder }}</td>
+            <td>{{ policy.premium | currency:'USD' }}</td>
+            <td>
+              <p-tag [value]="policy.status" [severity]="getSeverity(policy.status)"></p-tag>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
+})
+export class PolicyListComponent {
+  // Mock data to display in the table
+  policies = [
+    { id: 'POL-1001', type: 'Health Insurance', holder: 'John Doe', premium: 1200, status: 'Active' },
+    { id: 'POL-1002', type: 'Auto Insurance', holder: 'Jane Smith', premium: 850, status: 'Active' },
+    { id: 'POL-1003', type: 'Life Insurance', holder: 'Michael Johnson', premium: 3000, status: 'Pending' },
+    { id: 'POL-1004', type: 'Property Insurance', holder: 'Emily Davis', premium: 1500, status: 'Expired' },
+    { id: 'POL-1005', type: 'Health Insurance', holder: 'Chris Wilson', premium: 1100, status: 'Active' }
+  ];
+
+  // Colors the tags based on the status word
+  getSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' | 'secondary' | 'contrast' | undefined {
+    switch (status) {
+      case 'Active': return 'success'; // Green
+      case 'Pending': return 'warn';   // Yellow
+      case 'Expired': return 'danger'; // Red
+      default: return 'info';
+    }
+  }
+}
