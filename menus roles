@@ -110,3 +110,32 @@ export class PolicyListComponent {
 
   </div>
 </div>
+
+------------
+
+template: `
+    <div class="policy-container" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <p-table [value]="policies" [paginator]="true" [rows]="5" responsiveLayout="scroll" styleClass="p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Policy ID</th>
+            <th>Type</th>
+            <th>Holder Name</th>
+            <th>Premium</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-policy>
+          <tr>
+            <td style="font-weight: 600;">{{ policy.id }}</td>
+            <td>{{ policy.type }}</td>
+            <td>{{ policy.holder }}</td>
+            <td>{{ policy.premium | currency:'USD' }}</td>
+            <td>
+              <p-tag [value]="policy.status" [severity]="getSeverity(policy.status)"></p-tag>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
