@@ -1,0 +1,128 @@
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") // Apply to all endpoints (e.g., /api/login, /api/claims)
+                        .allowedOrigins("http://localhost:4200") // The exact URL of your Angular app
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
+                        .allowedHeaders("*") // Allow all headers
+                        .allowCredentials(true); // Needed if you use sessions or cookies later
+            }
+        };
+    }
+}
+--------------
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  
+  private baseUrl = 'http://localhost:8080/api'; 
+
+  constructor(private http: HttpClient) { }
+
+  // NEW: Login API Call
+  login(credentials: any): Observable<any> {
+    // Sends the username, password, and role to Spring Boot
+    return this.http.post(`${this.baseUrl}/auth/login`, credentials);
+  }
+
+  submitClaim(claimData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/claims`, claimData);
+  }
+}
+
+--------------
+
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { AuthService } from '../auth.service';
+import { ApiService } from '../../../core/services/api.service'; // <--- 1. Import ApiService
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
+})
+export class LoginComponent {
+  loginForm: FormGroup;
+  
+  roles = [
+    { label: 'Approver', value: 'Approver' },
+    { label: 'User', value: 'User' },
+    { label: 'Read-Only', value: 'Read-Only' },
+    { label: 'Super-user', value: 'Super-user' }
+  ];
+
+  // 2. Inject ApiService into the constructor
+  constructor(
+    private fb: FormBuilder, 
+    private router: Router, 
+    private authService: AuthService,
+    private apiService: ApiService
+  ) {
+    this.loginForm = this.fb.group({
+      role: ['', Validators.required],
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      const loginPayload = this.loginForm.value; // Grabs { role, username, password }
+
+      // 3. Make the actual HTTP POST request to Spring Boot
+      this.apiService.login(loginPayload).subscribe({
+        
+        next: (response) => {
+          // SUCCESS! Spring Boot said the password is correct.
+          console.log('Backend Response:', response);
+          
+          // Save the role to our local state so the dashboard builds the right menus
+          this.authService.setRole(loginPayload.role);
+          
+          // Now we are allowed to enter the dashboard
+          this.router.navigate(['/dashboard']); 
+        },
+        
+        error: (err) => {
+          // FAILURE! Spring Boot rejected the login or the server is off.
+          console.error('Login Failed:', err);
+          alert('Login failed! Please check your credentials or ensure the backend is running.');
+        }
+      });
+
+    } else {
+      this.loginForm.markAllAsTouched(); 
+    }
+  }
+}
+-----------
+
+  
+
+  
