@@ -25,3 +25,65 @@ public class Plan {
     private BigDecimal insuredAmount;
 }
 ----------------
+    <!-- Plans Table (for SuperUser templates) -->
+    <changeSet id="011-plans" author="you">
+        <createTable tableName="plans">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="plan_name" type="VARCHAR(100)"/>
+            <column name="plan_type" type="VARCHAR(50)"/>
+            <column name="tenure_years" type="INT"/>
+            <column name="premium_frequency" value="VARCHAR(20)"/>
+            <column name="insured_amount" type="DECIMAL(15,2)"/>
+        </createTable>
+    </changeSet>
+
+----------
+    <!-- Hardcoded 5 plans for SuperUser templates -->
+    <changeSet id="011-plans-data" author="you">
+        <!-- Plan 1 -->
+        <insert tableName="plans">
+            <column name="plan_name" value="Term Life Gold"/>
+            <column name="plan_type" value="Term"/>
+            <column name="tenure_years" value="15"/>
+            <column name="premium_frequency" value="yearly"/>
+            <column name="insured_amount" value="1000000"/>
+        </insert>
+
+        <!-- Plan 2 -->
+        <insert tableName="plans">
+            <column name="plan_name" value="Endowment Plan"/>
+            <column name="plan_type" value="Endowment"/>
+            <column name="tenure_years" value="10"/>
+            <column name="premium_frequency" value="monthly"/>
+            <column name="insured_amount" value="500000"/>
+        </insert>
+
+        <!-- Plan 3 -->
+        <insert tableName="plans">
+            <column name="plan_name" value="Child Future Plan"/>
+            <column name="plan_type" value="Money Back"/>
+            <column name="tenure_years" value="20"/>
+            <column name="premium_frequency" value="quarterly"/>
+            <column name="insured_amount" value="750000"/>
+        </insert>
+
+        <!-- Plan 4 -->
+        <insert tableName="plans">
+            <column name="plan_name" value="Health Shield"/>
+            <column name="plan_type" value="Health"/>
+            <column name="tenure_years" value="5"/>
+            <column name="premium_frequency" value="half-yearly"/>
+            <column name="insured_amount" value="300000"/>
+        </insert>
+
+        <!-- Plan 5 -->
+        <insert tableName="plans">
+            <column name="plan_name" value="Retirement Secure"/>
+            <column name="plan_type" value="Retirement"/>
+            <column name="tenure_years" value="25"/>
+            <column name="premium_frequency" value="yearly"/>
+            <column name="insured_amount" value="2000000"/>
+        </insert>
+    </changeSet>
