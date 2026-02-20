@@ -129,5 +129,86 @@ export class ManageUsersComponent {
 
 -----------
 
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 
+@Component({
+  selector: 'app-create-policy',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, InputText, Button, Select],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 800px;">
+      <h2 style="margin-top: 0; color: #00915a;">Create New Policy</h2>
+      <p style="color: #666; margin-bottom: 2rem;">Define a new insurance product for the system.</p>
+
+      <form [formGroup]="policyForm" (ngSubmit)="onCreate()" class="p-fluid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        
+        <div class="field">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Policy ID *</label>
+          <input pInputText formControlName="policyId" placeholder="e.g. POL-999" />
+          <small class="p-error" *ngIf="policyForm.get('policyId')?.invalid && policyForm.get('policyId')?.touched">Required.</small>
+        </div>
+
+        <div class="field">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Plan Name *</label>
+          <input pInputText formControlName="name" placeholder="e.g. Premium Auto Care" />
+          <small class="p-error" *ngIf="policyForm.get('name')?.invalid && policyForm.get('name')?.touched">Required.</small>
+        </div>
+
+        <div class="field">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Plan Type *</label>
+          <p-select formControlName="planType" [options]="planTypes" placeholder="Select Type" styleClass="w-full"></p-select>
+          <small class="p-error" *ngIf="policyForm.get('planType')?.invalid && policyForm.get('planType')?.touched">Required.</small>
+        </div>
+
+        <div class="field">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Monthly Premium ($) *</label>
+          <input pInputText type="number" formControlName="premium" placeholder="0.00" />
+          <small class="p-error" *ngIf="policyForm.get('premium')?.invalid && policyForm.get('premium')?.touched">Required.</small>
+        </div>
+
+        <div class="field" style="grid-column: span 1;">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Coverage Limit ($) *</label>
+          <input pInputText type="number" formControlName="coverage" placeholder="0.00" />
+          <small class="p-error" *ngIf="policyForm.get('coverage')?.invalid && policyForm.get('coverage')?.touched">Required.</small>
+        </div>
+
+        <div style="grid-column: span 2; margin-top: 1rem;">
+          <p-button label="Publish Policy" type="submit" icon="pi pi-check" [disabled]="policyForm.invalid" styleClass="p-button-success w-full"></p-button>
+        </div>
+      </form>
+    </div>
+  `
+})
+export class CreatePolicyComponent {
+  policyForm: FormGroup;
+  
+  planTypes = [
+    { label: 'Health', value: 'Health' },
+    { label: 'Auto', value: 'Auto' },
+    { label: 'Life', value: 'Life' },
+    { label: 'Property', value: 'Property' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    this.policyForm = this.fb.group({
+      policyId: ['', Validators.required],
+      name: ['', Validators.required],
+      planType: ['', Validators.required],
+      premium: [null, [Validators.required, Validators.min(1)]],
+      coverage: [null, [Validators.required, Validators.min(1)]]
+    });
+  }
+
+  onCreate() {
+    if (this.policyForm.valid) {
+      console.log('New Policy JSON:', this.policyForm.value);
+      alert('Policy Data Captured: ' + JSON.stringify(this.policyForm.value));
+    }
+  }
+}
 
