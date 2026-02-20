@@ -136,3 +136,13 @@ public class Plan {
         <column name="insured_amount" value="2000000"/>
     </insert>
 </changeSet>
+
+------------
+
+package com.example.policyengine.repository;
+
+import com.example.policyengine.entity.Plan;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PlanRepository extends JpaRepository<Plan, Long> {
+}
