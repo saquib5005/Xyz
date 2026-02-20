@@ -235,5 +235,100 @@ export class ApplyClaimComponent {
 </div>
 
 --------
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+// PrimeNG Imports
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { Select } from 'primeng/select';
+import { Button } from 'primeng/button';
 
+@Component({
+  selector: 'app-apply-claim',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, InputText, Textarea, Select, Button],
+  templateUrl: './apply-claim.component.html',
+  styleUrl: './apply-claim.component.scss'
+})
+export class ApplyClaimComponent {
+  claimForm: FormGroup;
+  
+  // Policy IDs for the dropdown
+  policyOptions = [
+    { label: 'POL-1001', value: 'POL-1001' },
+    { label: 'POL-1002', value: 'POL-1002' },
+    { label: 'POL-1005', value: 'POL-1005' }
+  ];
+
+  // Claim Types for the dropdown
+  claimTypes = [
+    { label: 'Health', value: 'Health' },
+    { label: 'Auto', value: 'Auto' },
+    { label: 'Life', value: 'Life' },
+    { label: 'Property', value: 'Property' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    // Exact mapping for the JSON body: policyId, claimType, claimAmount, remarks
+    this.claimForm = this.fb.group({
+      policyId: ['', Validators.required],
+      claimType: ['', Validators.required],
+      claimAmount: [null, [Validators.required, Validators.min(1)]],
+      remarks: ['', [Validators.required, Validators.minLength(5)]]
+    });
+  }
+
+  onSubmit() {
+    if (this.claimForm.valid) {
+      // This is exactly what will be sent to your Spring Boot API
+      console.log('JSON Request Body:', this.claimForm.value);
+      alert('Claim data ready for backend: ' + JSON.stringify(this.claimForm.value));
+    } else {
+      this.claimForm.markAllAsTouched();
+    }
+  }
+}
+
+---------
+
+<div class="claim-container" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 700px;">
+  <h2 style="margin-top: 0; color: #00915a;">Submit a New Claim</h2>
+  <p style="color: #666; margin-bottom: 2rem;">Fill out the fields below to prepare your claim submission.</p>
+
+  <form [formGroup]="claimForm" (ngSubmit)="onSubmit()" class="p-fluid" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div class="field-group">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Policy ID <span style="color: red;">*</span></label>
+        <p-select formControlName="policyId" [options]="policyOptions" placeholder="Select ID" styleClass="w-full"></p-select>
+        <small class="p-error" *ngIf="claimForm.get('policyId')?.invalid && claimForm.get('policyId')?.touched">Required.</small>
+      </div>
+
+      <div class="field-group">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Claim Type <span style="color: red;">*</span></label>
+        <p-select formControlName="claimType" [options]="claimTypes" placeholder="Select Type" styleClass="w-full"></p-select>
+        <small class="p-error" *ngIf="claimForm.get('claimType')?.invalid && claimForm.get('claimType')?.touched">Required.</small>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Claim Amount ($) <span style="color: red;">*</span></label>
+      <input pInputText type="number" formControlName="claimAmount" placeholder="Enter amount" />
+      <small class="p-error" *ngIf="claimForm.get('claimAmount')?.invalid && claimForm.get('claimAmount')?.touched">Valid amount required.</small>
+    </div>
+
+    <div class="field-group">
+      <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Remarks <span style="color: red;">*</span></label>
+      <textarea pTextarea formControlName="remarks" rows="4" placeholder="Additional details..."></textarea>
+      <small class="p-error" *ngIf="claimForm.get('remarks')?.invalid && claimForm.get('remarks')?.touched">Minimum 5 characters required.</small>
+    </div>
+
+    <div style="margin-top: 1rem;">
+      <p-button label="Prepare Submission" type="submit" icon="pi pi-file" [disabled]="claimForm.invalid" styleClass="p-button-success w-full"></p-button>
+    </div>
+
+  </form>
+</div>
+----------
 
