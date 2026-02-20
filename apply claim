@@ -1,0 +1,95 @@
+// ... inside children array
+{ path: 'policies', loadComponent: () => import('./features/dashboard/policy-list/policy-list.component').then(m => m.PolicyListComponent) },
+{ path: 'apply-claim', loadComponent: () => import('./features/dashboard/apply-claim/apply-claim.component').then(m => m.ApplyClaimComponent) },
+// NEW: Add the Approve Claim route
+{ path: 'approve-claim', loadComponent: () => import('./features/dashboard/approve-claim/approve-claim.component').then(m => m.ApproveClaimComponent) },
+
+----------
+
+else if (role === 'Approver') {
+  this.menuItems = [
+    { label: 'View Policies', icon: 'pi pi-list', routerLink: ['/dashboard/policies'] },
+    { label: 'Approve Claim', icon: 'pi pi-check-circle', routerLink: ['/dashboard/approve-claim'] } // Point here
+  ];
+}
+
+--------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
+import { Dialog } from 'primeng/dialog'; // For the popup
+import { Tag } from 'primeng/tag';
+
+@Component({
+  selector: 'app-approve-claim',
+  standalone: true,
+  imports: [CommonModule, TableModule, Button, Dialog, Tag],
+  templateUrl: './approve-claim.component.html'
+})
+export class ApproveClaimComponent {
+  claims = [
+    { id: 'CLM-5001', policyId: 'POL-1001', user: 'John Doe', amount: 450, status: 'Pending' },
+    { id: 'CLM-5002', policyId: 'POL-1005', user: 'Chris Wilson', amount: 1200, status: 'Pending' }
+  ];
+
+  displayModal: boolean = false;
+  selectedClaim: any = null;
+
+  openApproveModal(claim: any) {
+    this.selectedClaim = claim;
+    this.displayModal = true;
+  }
+
+  confirmApproval() {
+    console.log('Approved Claim:', this.selectedClaim.id);
+    // Logic to update status would go here
+    this.displayModal = false;
+  }
+}
+
+--------
+<div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+  <h2 style="margin-top: 0; color: #00915a;">Pending Approvals</h2>
+  
+  <p-table [value]="claims" styleClass="p-datatable-striped">
+    <ng-template #header>
+      <tr>
+        <th>Claim ID</th>
+        <th>Policy ID</th>
+        <th>User</th>
+        <th>Amount</th>
+        <th>Action</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-claim>
+      <tr>
+        <td>{{ claim.id }}</td>
+        <td>{{ claim.policyId }}</td>
+        <td>{{ claim.user }}</td>
+        <td>{{ claim.amount | currency:'USD' }}</td>
+        <td>
+          <p-button label="Review" icon="pi pi-search" (onClick)="openApproveModal(claim)"></p-button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <p-dialog header="Review Claim" [(visible)]="displayModal" [modal]="true" [style]="{width: '30vw'}">
+    <div *ngIf="selectedClaim">
+      <p>Are you sure you want to approve the claim <strong>{{selectedClaim.id}}</strong> for amount <strong>{{selectedClaim.amount | currency}}</strong>?</p>
+    </div>
+    <ng-template #footer>
+      <p-button label="Reject" icon="pi pi-times" (onClick)="displayModal=false" styleClass="p-button-text p-button-danger"></p-button>
+      <p-button label="Approve" icon="pi pi-check" (onClick)="confirmApproval()" styleClass="p-button-success"></p-button>
+    </ng-template>
+  </p-dialog>
+</div>
+
+-----------
+
+
+
+
+
