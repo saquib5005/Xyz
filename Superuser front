@@ -211,4 +211,9 @@ export class CreatePolicyComponent {
     }
   }
 }
+--------
+
+<div class="sidebar-footer">
+      <p-button label="Logout" icon="pi pi-sign-out" styleClass="p-button-text p-button-danger w-full logout-btn" (onClick)="logout()"></p-button>
+    </div>
 
