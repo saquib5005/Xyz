@@ -139,3 +139,101 @@ template: `
       </p-table>
     </div>
   `
+
+-----=-=-=-=-=-=-=-
+
+Apply Claim
+
+---
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+// PrimeNG Imports
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { DatePicker } from 'primeng/datepicker';
+import { Select } from 'primeng/select';
+import { Button } from 'primeng/button';
+
+@Component({
+  selector: 'app-apply-claim',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, Card, InputText, Textarea, DatePicker, Select, Button],
+  templateUrl: './apply-claim.component.html',
+  styleUrl: './apply-claim.component.scss'
+})
+export class ApplyClaimComponent {
+  claimForm: FormGroup;
+  
+  // Mock policy list to link the claim to an existing policy
+  policies = [
+    { label: 'POL-1001 (Health)', value: 'POL-1001' },
+    { label: 'POL-1002 (Auto)', value: 'POL-1002' },
+    { label: 'POL-1005 (Health)', value: 'POL-1005' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    this.claimForm = this.fb.group({
+      policyNumber: ['', Validators.required],
+      incidentDate: [null, Validators.required],
+      claimAmount: ['', [Validators.required, Validators.min(1)]],
+      reason: ['', [Validators.required, Validators.minLength(10)]]
+    });
+  }
+
+  submitClaim() {
+    if (this.claimForm.valid) {
+      console.log('Claim Submitted:', this.claimForm.value);
+      // We will add a success toast notification here in the next step
+    } else {
+      this.claimForm.markAllAsTouched();
+    }
+  }
+}
+
+--------
+
+<div class="claim-container" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 800px;">
+  <h2 style="margin-top: 0; color: #00915a;">Submit a New Claim</h2>
+  <p style="color: #666; margin-bottom: 2rem;">Please provide the details of the incident to initiate your claim process.</p>
+
+  <form [formGroup]="claimForm" (ngSubmit)="submitClaim()" class="p-fluid" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div class="field-group">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Select Policy <span style="color: red;">*</span></label>
+        <p-select formControlName="policyNumber" [options]="policies" placeholder="Choose Policy" styleClass="w-full"></p-select>
+        <small class="p-error" *ngIf="claimForm.get('policyNumber')?.invalid && claimForm.get('policyNumber')?.touched">Policy is required.</small>
+      </div>
+
+      <div class="field-group">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Date of Incident <span style="color: red;">*</span></label>
+        <p-datepicker formControlName="incidentDate" [showIcon]="true" placeholder="Select Date" styleClass="w-full"></p-datepicker>
+        <small class="p-error" *ngIf="claimForm.get('incidentDate')?.invalid && claimForm.get('incidentDate')?.touched">Date is required.</small>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Estimated Claim Amount ($) <span style="color: red;">*</span></label>
+      <input pInputText type="number" formControlName="claimAmount" placeholder="e.g. 500" />
+      <small class="p-error" *ngIf="claimForm.get('claimAmount')?.invalid && claimForm.get('claimAmount')?.touched">Enter a valid amount.</small>
+    </div>
+
+    <div class="field-group">
+      <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Reason for Claim <span style="color: red;">*</span></label>
+      <textarea pTextarea formControlName="reason" rows="5" placeholder="Describe what happened in at least 10 characters..."></textarea>
+      <small class="p-error" *ngIf="claimForm.get('reason')?.invalid && claimForm.get('reason')?.touched">Please provide a detailed reason.</small>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <p-button label="Submit Claim Request" type="submit" icon="pi pi-send" [disabled]="claimForm.invalid" styleClass="p-button-success"></p-button>
+      <p-button label="Clear Form" type="button" icon="pi pi-refresh" styleClass="p-button-secondary p-button-outlined" (onClick)="claimForm.reset()"></p-button>
+    </div>
+
+  </form>
+</div>
+
+--------
+
+
