@@ -332,3 +332,16 @@ export class ApplyClaimComponent {
 </div>
 ----------
 
+<div class="field-group">
+  <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">
+    Policy ID <span style="color: red;">*</span>
+  </label>
+  <input pInputText 
+         id="policyId" 
+         formControlName="policyId" 
+         placeholder="e.g. POL-1001" 
+         class="w-full" />
+  <small class="p-error" *ngIf="claimForm.get('policyId')?.invalid && claimForm.get('policyId')?.touched">
+    Policy ID is required.
+  </small>
+</div>
