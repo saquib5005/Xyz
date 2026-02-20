@@ -216,4 +216,19 @@ export class CreatePolicyComponent {
 <div class="sidebar-footer">
       <p-button label="Logout" icon="pi pi-sign-out" styleClass="p-button-text p-button-danger w-full logout-btn" (onClick)="logout()"></p-button>
     </div>
+=======================
 
+/* ... existing styles ... */
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #ffffff;
+}
+
+/* Force the PrimeNG text button to align left like a menu item */
+::ng-deep .logout-btn {
+  justify-content: flex-start !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600 !important;
+}
