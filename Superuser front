@@ -1,0 +1,133 @@
+// ... inside children array
+{ path: 'create-policy', loadComponent: () => import('./features/dashboard/create-policy/create-policy.component').then(m => m.CreatePolicyComponent) },
+{ path: 'manage-users', loadComponent: () => import('./features/dashboard/manage-users/manage-users.component').then(m => m.ManageUsersComponent) },
+
+---------
+
+else if (role === 'Super-user' || role === 'Superuser') {
+  this.menuItems = [
+    { label: 'Create Policy', icon: 'pi pi-plus', routerLink: ['/dashboard/create-policy'] },
+    { label: 'Activate Registrations', icon: 'pi pi-user-edit', routerLink: ['/dashboard/manage-users'] }
+  ];
+}
+
+------------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+
+@Component({
+  selector: 'app-create-policy',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, InputText, Button, Select],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); max-width: 800px;">
+      <h2 style="margin-top: 0; color: #00915a;">Create New Policy</h2>
+      <p style="color: #666; margin-bottom: 2rem;">Define a new insurance product for the system.</p>
+
+      <form [formGroup]="policyForm" (ngSubmit)="onCreate()" class="p-fluid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="field">
+          <label style="font-weight: 600;">Policy Name *</label>
+          <input pInputText formControlName="name" placeholder="e.g. Premium Auto Care" />
+        </div>
+        <div class="field">
+          <label style="font-weight: 600;">Category *</label>
+          <p-select formControlName="category" [options]="categories" placeholder="Select Category"></p-select>
+        </div>
+        <div class="field">
+          <label style="font-weight: 600;">Monthly Premium ($) *</label>
+          <input pInputText type="number" formControlName="premium" />
+        </div>
+        <div class="field">
+          <label style="font-weight: 600;">Coverage Limit ($) *</label>
+          <input pInputText type="number" formControlName="coverage" />
+        </div>
+        <div style="grid-column: span 2;">
+          <p-button label="Publish Policy" type="submit" icon="pi pi-check" [disabled]="policyForm.invalid" styleClass="p-button-success w-full"></p-button>
+        </div>
+      </form>
+    </div>
+  `
+})
+export class CreatePolicyComponent {
+  policyForm: FormGroup;
+  categories = [
+    { label: 'Health', value: 'Health' },
+    { label: 'Auto', value: 'Auto' },
+    { label: 'Life', value: 'Life' }
+  ];
+
+  constructor(private fb: FormBuilder) {
+    this.policyForm = this.fb.group({
+      name: ['', Validators.required],
+      category: ['', Validators.required],
+      premium: [null, Validators.required],
+      coverage: [null, Validators.required]
+    });
+  }
+
+  onCreate() {
+    console.log('New Policy Data:', this.policyForm.value);
+  }
+}
+
+---------
+
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
+import { Tag } from 'primeng/tag';
+
+@Component({
+  selector: 'app-manage-users',
+  standalone: true,
+  imports: [CommonModule, TableModule, Button, Tag],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h2 style="margin-top: 0; color: #00915a;">User Registrations</h2>
+      <p style="color: #666; margin-bottom: 2rem;">Manage and activate new account requests.</p>
+
+      <p-table [value]="pendingUsers" styleClass="p-datatable-striped">
+        <ng-template #header>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Requested Role</th>
+            <th>Action</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-user>
+          <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td><p-tag [value]="user.role" severity="info"></p-tag></td>
+            <td>
+              <div style="display: flex; gap: 0.5rem;">
+                <p-button label="Activate" icon="pi pi-user-plus" severity="success" size="small"></p-button>
+                <p-button label="Reject" icon="pi pi-trash" severity="danger" size="small" [outlined]="true"></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
+})
+export class ManageUsersComponent {
+  pendingUsers = [
+    { name: 'Sarah Connor', email: 'sarah@test.com', role: 'Approver' },
+    { name: 'Kyle Reese', email: 'kyle@test.com', role: 'User' },
+    { name: 'Miles Dyson', email: 'miles@tech.com', role: 'Read-Only' }
+  ];
+}
+
+-----------
+
+
+
