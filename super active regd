@@ -1,0 +1,24 @@
+// Fetch all pending (inactive) users for the Superuser dashboard
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getPendingUsers() {
+        // Assuming your repository has a method like findByActiveFalse()
+        List<User> pendingUsers = userRepository.findByActiveFalse();
+        return ResponseEntity.ok(pendingUsers);
+    }
+
+    --------
+
+// Fetches users from Spring Boot
+  loadUsers() {
+    this.apiService.getUsers().subscribe({
+      next: (data: any) => {
+        // NEW: Print the exact data from the backend to the browser console!
+        console.log('Backend Data Received:', data); 
+        
+        this.pendingUsers = data; 
+      },
+      error: (err: any) => {
+        console.error('Failed to load users from DB:', err);
+      }
+    });
+  }
