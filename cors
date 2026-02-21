@@ -426,3 +426,78 @@ export class SignupComponent {
     }
   }
 }
+-------
+
+<div class="login-container">
+  
+  <div class="branding-section">
+    <div class="logo-placeholder">
+      <i class="pi pi-user-plus" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+      <h1>Join the Portal</h1>
+      <p>Request access to the Policy & Claims system.</p>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <p-card [style]="{ width: '100%', maxWidth: '32rem', border: 'none', boxShadow: 'none' }">
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0; font-size: 1.8rem; color: #333;">Create Account</h2>
+        <p style="color: #6c757d; margin-top: 0.5rem;">Fill in your details to register.</p>
+      </div>
+
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="login-form">
+        
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="name" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Full Name <span class="required-asterisk" style="color: red;">*</span></label>
+          <input pInputText id="name" formControlName="name" placeholder="Enter your full name" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('name')?.invalid && signupForm.get('name')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Name is required.</small>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="email" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Email Address <span class="required-asterisk" style="color: red;">*</span></label>
+          <input pInputText id="email" type="email" formControlName="email" placeholder="Enter your email" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('required') && signupForm.get('email')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Email is required.</small>
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('email') && signupForm.get('email')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Enter a valid email address.</small>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="role" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Requested Role <span class="required-asterisk" style="color: red;">*</span></label>
+          <p-select formControlName="role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select a Role" styleClass="w-full"></p-select>
+          <small class="p-error" *ngIf="signupForm.get('role')?.invalid && signupForm.get('role')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Role is required.</small>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="username" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Username <span class="required-asterisk" style="color: red;">*</span></label>
+          <input pInputText id="username" formControlName="username" placeholder="Choose a username" class="w-full" />
+          <small class="p-error" *ngIf="signupForm.get('username')?.invalid && signupForm.get('username')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Username is required.</small>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="password" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password <span class="required-asterisk" style="color: red;">*</span></label>
+          <p-password formControlName="password" [toggleMask]="true" [feedback]="true" placeholder="Create a password" styleClass="w-full" inputStyleClass="w-full"></p-password>
+          <small class="p-error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Password is required.</small>
+        </div>
+
+        <p-button label="Sign Up" type="submit" [disabled]="signupForm.invalid" styleClass="w-full" [style]="{'margin-top': '1rem'}"></p-button>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+          <span style="color: #6c757d;">Already have an account? </span>
+          <a routerLink="/login" style="color: #00915a; font-weight: 600; text-decoration: none; cursor: pointer;">Login here</a>
+        </div>
+
+      </form>
+    </p-card>
+  </div>
+</div>
+-------
+constructor(private fb: FormBuilder, private apiService: ApiService, private router: Router) {
+    this.signupForm = this.fb.group({
+      name: ['', Validators.required],             // Matches formControlName="name"
+      email: ['', [Validators.required, Validators.email]], 
+      role: ['', Validators.required],             
+      username: ['', Validators.required],         // Matches formControlName="username"
+      password: ['', [Validators.required, Validators.minLength(6)]] 
+    });
+  }
+
