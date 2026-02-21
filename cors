@@ -122,6 +122,36 @@ export class LoginComponent {
   }
 }
 -----------
+onSubmit() {
+    if (this.loginForm.valid) {
+      const loginPayload = this.loginForm.value;
+      console.log('Sending to Backend:', loginPayload);
+
+      // 3. The Real Backend Connection
+      this.apiService.login(loginPayload).subscribe({
+        next: (response) => {
+          // SUCCESS: The backend accepted the credentials
+          console.log('Login Success:', response);
+          
+          // Save the role and go to dashboard
+          this.authService.setRole(loginPayload.role);
+          this.router.navigate(['/dashboard']); 
+        },
+        error: (error) => {
+          // FAILURE: Backend rejected it or is offline
+          console.error('Login Failed:', error);
+          alert('Login Failed! Check if Spring Boot is running on port 8080.');
+        }
+      });
+      
+    } else {
+      this.loginForm.markAllAsTouched();
+    }
+  }
+}
+
+------
+
 
   
 
