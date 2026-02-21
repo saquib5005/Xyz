@@ -211,4 +211,39 @@ export class CreatePolicyComponent {
     }
   }
 }
+------
+
+// NEW: Save the User ID
+  setUserId(id: string) {
+    localStorage.setItem('userId', id.toString());
+  }
+
+  // NEW: Retrieve the User ID
+  getUserId(): string {
+    // Retrieves the ID, or defaults to '1' just to be safe
+    return localStorage.getItem('userId') || '1';
+  }
+
+---------
+// ... inside onSubmit() ...
+      this.apiService.login(loginPayload).subscribe({
+        next: (response) => {
+          console.log('Login Success:', response);
+          
+          // 1. Save the role
+          this.authService.setRole(loginPayload.role);
+          
+          // 2. NEW: Save the user ID from the Spring Boot response!
+          // (If your backend JSON uses a different name, change response.id to response.userId etc.)
+          const userId = response.id || '1'; 
+          this.authService.setUserId(userId);
+          
+          // 3. Go to dashboard
+          this.router.navigate(['/dashboard']); 
+        },
+        // ... error block ...
+
+-------
+
+
   
