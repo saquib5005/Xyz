@@ -1,0 +1,15 @@
+public List<UserResponse> getPendingUsers() {
+    List<User> pendingUsers = userRepository.findByActiveFalse();
+    return pendingUsers.stream()
+            .map(user -> {
+                UserResponse resp = new UserResponse();
+                resp.setId(user.getId());
+                resp.setUsername(user.getUsername());
+                resp.setName(user.getName());
+                resp.setEmail(user.getEmail());
+                resp.setRole(user.getRole());
+                resp.setActive(user.isActive());
+                return resp;
+            })
+            .collect(Collectors.toList());
+}
