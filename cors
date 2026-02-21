@@ -500,4 +500,61 @@ constructor(private fb: FormBuilder, private apiService: ApiService, private rou
       password: ['', [Validators.required, Validators.minLength(6)]] 
     });
   }
+----------
+
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../../features/auth/auth.service';
+
+export const authGuard: CanActivateFn = (route, state) => {
+  // We use inject() instead of a constructor for functional guards
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  // If they have a role, let them pass
+  if (authService.getRole()) {
+    return true; 
+  }
+
+  // If they don't have a role, kick them to login and block the route
+  router.navigate(['/login']);
+  return false; 
+};
+
+---------
+import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard'; // <--- 1. Import the guard
+
+export const routes: Routes = [
+  { 
+    path: 'login', 
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) 
+  },
+  { 
+    path: 'signup', 
+    loadComponent: () => import('./features/auth/signup/signup.component').then(m => m.SignupComponent) 
+  },
+  { 
+    path: 'dashboard', 
+    loadComponent: () => import('./features/dashboard/layout/layout.component').then(m => m.LayoutComponent),
+    canActivate: [authGuard], // <--- 2. Add the bouncer here! It protects the layout and ALL children.
+    children: [
+      { path: 'policies', loadComponent: () => import('./features/dashboard/policy-list/policy-list.component').then(m => m.PolicyListComponent) },
+      { path: 'apply-claim', loadComponent: () => import('./features/dashboard/apply-claim/apply-claim.component').then(m => m.ApplyClaimComponent) },
+      { path: 'approve-claim', loadComponent: () => import('./features/dashboard/approve-claim/approve-claim.component').then(m => m.ApproveClaimComponent) },
+      { path: 'create-policy', loadComponent: () => import('./features/dashboard/create-policy/create-policy.component').then(m => m.CreatePolicyComponent) },
+      { path: 'manage-users', loadComponent: () => import('./features/dashboard/manage-users/manage-users.component').then(m => m.ManageUsersComponent) },
+      { path: '', redirectTo: 'policies', pathMatch: 'full' }
+    ]
+  },
+  { path: '', redirectTo: 'login', pathMatch: 'full' }
+];
+
+---------
+
+ngOnInit() {
+    // We only need to read the role now to build the menus
+    this.currentRole = this.authService.getRole();
+    this.setMenuForRole(this.currentRole);
+  }
 
