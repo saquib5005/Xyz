@@ -868,6 +868,94 @@ export class ManageUsersComponent implements OnInit {
 ------------
 
 
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-</div>
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+
+  // Your Spring Boot URL
+  private baseUrl = 'http://localhost:8080/api';
+
+  constructor(private http: HttpClient) { }
+
+  // 1. Login Request
+  login(credentials: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/login`, credentials);
+  }
+
+  // 2. Signup Request
+  signup(userData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/signup`, userData, { responseType: 'text' });
+  }
+
+  // 3. Submit Claim
+  submitClaim(claimData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/claims`, claimData);
+  }
+
+  // 4. Get All Users (For Superuser)
+  getUsers(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/auth/users`); 
+  }
+
+  // 5. Activate User (For Superuser)
+  activateUser(userId: number | string, remarks: string): Observable<any> {
+    const payload = { remarks: remarks };
+    return this.http.post(`${this.baseUrl}/auth/activate/${userId}`, payload, { responseType: 'text' });
+  }
+}
+
+-------
+
+export class ManageUsersComponent implements OnInit {
+  pendingUsers: any[] = [];
+
+  constructor(private apiService: ApiService) {}
+
+  ngOnInit() {
+    this.loadUsers();
+  }
+
+  // Fetches users from Spring Boot
+  loadUsers() {
+    this.apiService.getUsers().subscribe({
+      // FIXED: Added ': any' to satisfy strict mode
+      next: (data: any) => {
+        this.pendingUsers = data; 
+      },
+      // FIXED: Added ': any' to satisfy strict mode
+      error: (err: any) => {
+        console.error('Failed to load users from DB:', err);
+      }
+    });
+  }
+
+  // Triggered when Superuser clicks "Activate"
+  onActivate(userId: string | number) {
+    const userRemarks = prompt('Enter activation remarks:', 'Activated after email verification');
+    
+    if (userRemarks === null) {
+      return; 
+    }
+
+    this.apiService.activateUser(userId, userRemarks).subscribe({
+      next: (response: string) => {
+        alert(response); 
+        this.loadUsers(); 
+      },
+      // FIXED: Added ': any' to satisfy strict mode
+      error: (err: any) => {
+        console.error('Activation Failed:', err);
+        alert('Error: Could not activate user. Check console for details.');
+      }
+    });
+  }
+}
+
+--------
+
 
