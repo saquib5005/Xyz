@@ -369,3 +369,60 @@ export class SignupComponent {
 
   </p-card>
 </div>
+--------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { ApiService } from '../../../core/services/api';
+
+@Component({
+  selector: 'app-signup',
+  standalone: true,
+  templateUrl: './signup.html',
+  styleUrl: './signup.scss',
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select]
+})
+export class SignupComponent {
+  signupForm: FormGroup;
+
+  roles = [
+    { label: 'User', value: 'User' },
+    { label: 'Approver', value: 'Approver' },
+    { label: 'Read-Only', value: 'Read-Only' }
+  ];
+
+  constructor(private fb: FormBuilder, private apiService: ApiService, private router: Router) {
+    this.signupForm = this.fb.group({
+      fullName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      role: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
+
+  onSubmit() {
+    if (this.signupForm.valid) {
+      console.log('Sending Signup Data:', this.signupForm.value);
+      
+      this.apiService.signup(this.signupForm.value).subscribe({
+        next: (response) => {
+          alert('Registration successful! Please wait for a Super-user to activate your account.');
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error('Signup Failed:', err);
+          alert('Registration failed. Email might already be in use.');
+        }
+      });
+    } else {
+      this.signupForm.markAllAsTouched();
+    }
+  }
+}
