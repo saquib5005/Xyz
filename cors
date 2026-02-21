@@ -153,7 +153,56 @@ onSubmit() {
 ------
 
 
-onSubmit() {
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { ApiService } from '../../../core/services/api.service';
+
+@Component({
+  selector: 'app-signup',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select],
+  templateUrl: './signup.component.html',
+  styleUrl: './signup.component.scss'
+})
+export class SignupComponent {
+  signupForm: FormGroup;
+  
+  // The roles they can request to join as
+  roles = [
+    { label: 'User', value: 'User' },
+    { label: 'Approver', value: 'Approver' },
+    { label: 'Read-Only', value: 'Read-Only' }
+  ];
+
+  constructor(private fb: FormBuilder, private apiService: ApiService, private router: Router) {
+    this.signupForm = this.fb.group({
+      fullName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      role: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  // Custom validator to ensure passwords match
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
+    if (password !== confirmPassword) {
+      control.get('confirmPassword')?.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    }
+    return null;
+  }
+
+  onSubmit() {
     if (this.signupForm.valid) {
       // Remove confirmPassword before sending to backend
       const { confirmPassword, ...userData } = this.signupForm.value;
