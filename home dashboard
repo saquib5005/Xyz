@@ -245,5 +245,104 @@ export class CreatePolicyComponent {
 
 -------
 
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
+import { Tag } from 'primeng/tag';
+import { ApiService } from '../../../core/services/api';
+import { AuthService } from '../../auth/auth.service';
+
+@Component({
+  selector: 'app-super-policies',
+  standalone: true,
+  imports: [CommonModule, TableModule, Tag],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h2 style="margin-top: 0; color: #00915a;">All Created Policies (Superuser View)</h2>
+      <p style="color: #666; margin-bottom: 2rem;">A master list of all plans defined in the system.</p>
+
+      <p-table [value]="policies" styleClass="p-datatable-striped" [tableStyle]="{'min-width': '50rem'}">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Policy ID</th>
+            <th>Plan Name</th>
+            <th>Type</th>
+            <th>Monthly Premium</th>
+            <th>Coverage Limit</th>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="body" let-policy>
+          <tr>
+            <td style="font-weight: bold;">{{ policy.policyId || policy.id || policy.planId }}</td>
+            <td>{{ policy.name || policy.planName }}</td>
+            <td>
+              <p-tag [value]="policy.planType || policy.category || policy.type" severity="info"></p-tag>
+            </td>
+            <td>{{ policy.monthlyPremium || policy.premium | currency:'USD' }}</td>
+            <td>{{ policy.coverageLimit || policy.coverage || policy.sumInsured | currency:'USD' }}</td>
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem;">No policies found. Try creating one!</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
+})
+export class SuperPoliciesComponent implements OnInit {
+  policies: any[] = [];
+
+  constructor(
+    private apiService: ApiService, 
+    private authService: AuthService, // Injected AuthService to get the real ID
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit() {
+    this.loadPolicies();
+  }
+
+  loadPolicies() {
+    // 1. Get the actual logged-in user's ID (falls back to '1' if none is found)
+    const superUserId = this.authService.getUserId();
+
+    // 2. Fetch the data from GET http://localhost:8080/api/policies/super-view
+    this.apiService.getSuperCreatedPolicies(superUserId).subscribe({
+      next: (data: any) => {
+        // Log the raw data to the console so we can see exactly what Spring Boot is sending!
+        console.log('Fetched Policies from DB:', data); 
+        
+        this.policies = data;
+        
+        // 3. Safely tell Angular to redraw the table with the new data
+        this.cdr.detectChanges(); 
+      },
+      error: (err: any) => {
+        console.error('Failed to load superuser policies:', err);
+      }
+    });
+  }
+}
+------------
+
+// 1. CREATE link pointing to /plans/create
+  createPolicy(policyData: any, userId: string): Observable<any> {
+    const headers = new HttpHeaders().set('userId', userId);
+    return this.http.post(`${this.baseUrl}/plans/create`, policyData, { headers: headers, responseType: 'text' });
+  }
+
+  // 2. VIEW link pointing to /policies/super-view
+  getSuperCreatedPolicies(userId: string): Observable<any> {
+    const headers = new HttpHeaders().set('userId', userId);
+    return this.http.get(`${this.baseUrl}/policies/super-view`, { headers: headers });
+  }
+
+--------------
+
+
 
   
