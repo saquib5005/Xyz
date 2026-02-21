@@ -1,0 +1,51 @@
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+public class PolicyViewDTO {
+    private Long policyId;
+    private String planName;
+    private String planType;
+    private BigDecimal monthlyPremium;
+    private BigDecimal coverageLimit;
+}
+
+---------
+
+public List<PolicyViewDTO> getSuperUserPolicies(Long superUserId) {
+    List<Policy> policies = policyRepository.findAll();  // Or findByUserId(superUserId) if SuperUser is creator
+    return policies.stream()
+            .map(policy -> {
+                PolicyViewDTO dto = new PolicyViewDTO();
+                dto.setPolicyId(policy.getId());
+                dto.setPlanName(policy.getPlanName());
+                dto.setPlanType(policy.getPlanType());
+                dto.setMonthlyPremium(policy.getPremiumAmount());  // Assume monthly; adjust if frequency-based
+                dto.setCoverageLimit(policy.getCoverageLimit());
+                return dto;
+            })
+            .collect(Collectors.toList());
+}
+
+
+-----------
+
+@GetMapping("/super-view")
+public List<PolicyViewDTO> getSuperUserPolicies(@RequestHeader("userId") Long superUserId) {
+    return policyService.getSuperUserPolicies(superUserId);
+}
+
+[
+  {
+    "policyId": 1,
+    "planName": "Term Life Gold",
+    "planType": "Term",
+    "monthlyPremium": 45000.00,
+    "coverageLimit": 1000000.00
+  }
+]
+
+
