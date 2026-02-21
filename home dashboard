@@ -134,6 +134,81 @@ children: [
       ];
     }
 
+------
+// Create a new policy
+  // Change '/policies' if your Spring Boot URL is different (e.g., '/policies/create')
+  createPolicy(policyData: any, userId: string): Observable<any> {
+    const headers = new HttpHeaders().set('userId', userId);
+    return this.http.post(`${this.baseUrl}/policies`, policyData, { headers: headers });
+  }
+---
 
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+// 1. Add these new imports
+import { Router } from '@angular/router';
+import { ApiService } from '../../../core/services/api';
+import { AuthService } from '../../auth/auth.service';
 
+@Component({
+  selector: 'app-create-policy',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, InputText, Button, Select],
+  // ... Keep your existing template HTML exactly the same ...
+  templateUrl: './create-policy.component.html', // (Or your inline template)
+})
+export class CreatePolicyComponent {
+  policyForm: FormGroup;
+  
+  planTypes = [
+    { label: 'Health', value: 'Health' },
+    { label: 'Auto', value: 'Auto' },
+    { label: 'Life', value: 'Life' },
+    { label: 'Property', value: 'Property' }
+  ];
+
+  // 2. Inject ApiService, AuthService, and Router
+  constructor(
+    private fb: FormBuilder,
+    private apiService: ApiService,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.policyForm = this.fb.group({
+      policyId: ['', Validators.required],
+      name: ['', Validators.required],
+      planType: ['', Validators.required],
+      premium: [null, [Validators.required, Validators.min(1)]],
+      coverage: [null, [Validators.required, Validators.min(1)]]
+    });
+  }
+
+  // 3. Update the submit method
+  onCreate() {
+    if (this.policyForm.valid) {
+      const policyPayload = this.policyForm.value;
+      const superUserId = this.authService.getUserId(); // Get the logged-in Superuser's ID
+
+      this.apiService.createPolicy(policyPayload, superUserId).subscribe({
+        next: (response: any) => {
+          alert('Policy successfully published to the database!');
+          this.policyForm.reset(); 
+          
+          // Automatically route them to the view screen to see their new policy!
+          this.router.navigate(['/dashboard/super-policies']);
+        },
+        error: (err: any) => {
+          console.error('Failed to create policy:', err);
+          alert('Failed to save policy to the database. Check console for details.');
+        }
+      });
+    } else {
+      this.policyForm.markAllAsTouched();
+    }
+  }
+}
   
