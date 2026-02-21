@@ -232,3 +232,145 @@ export class CreatePolicyComponent {
   padding: 0.75rem 1rem !important;
   font-weight: 600 !important;
 }
+
+
+-----------
+
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+
+  private baseUrl = 'http://localhost:8080/api';
+
+  constructor(private http: HttpClient) { }
+
+  // 1. Get Pending Users (GET http://localhost:8080/api/auth/pending-users)
+  getPendingUsers(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/auth/pending-users`);
+  }
+
+  // 2. Activate User (POST http://localhost:8080/api/auth/activate/{id})
+  activateUser(userId: number | string, remarks: string): Observable<any> {
+    const payload = { remarks: remarks };
+    // We use responseType: 'text' because your backend returns a plain string message
+    return this.http.post(`${this.baseUrl}/auth/activate/${userId}`, payload, { responseType: 'text' });
+  }
+
+  // ... keep your other methods (login, signup, submitClaim) here ...
+}
+
+-----------
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
+import { Tag } from 'primeng/tag';
+import { ApiService } from '../../../core/services/api'; 
+
+@Component({
+  selector: 'app-manage-users',
+  standalone: true,
+  imports: [CommonModule, TableModule, Button, Tag],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h2 style="margin-top: 0; color: #00915a;">User Registrations</h2>
+      <p style="color: #666; margin-bottom: 2rem;">Approve pending user accounts.</p>
+
+      <p-table [value]="pendingUsers" styleClass="p-datatable-striped" [tableStyle]="{'min-width': '60rem'}">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-user>
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.name || user.fullName }}</td>
+            <td>{{ user.email }}</td>
+            <td><p-tag [value]="user.role" severity="info"></p-tag></td>
+            <td>
+              <p-tag 
+                [value]="user.active ? 'Active' : 'Pending'" 
+                [severity]="user.active ? 'success' : 'warning'">
+              </p-tag>
+            </td>
+            <td>
+              <p-button 
+                *ngIf="!user.active"
+                label="Activate" 
+                icon="pi pi-check" 
+                severity="success" 
+                size="small" 
+                (onClick)="onActivate(user.id)">
+              </p-button>
+              <span *ngIf="user.active" style="color: #00915a; font-weight: bold;">
+                <i class="pi pi-check-circle"></i> Active
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem;">No pending users found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
+})
+export class ManageUsersComponent implements OnInit {
+  pendingUsers: any[] = [];
+
+  constructor(private apiService: ApiService) {}
+
+  ngOnInit() {
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    this.apiService.getPendingUsers().subscribe({
+      next: (data: any) => {
+        this.pendingUsers = data;
+        console.log('Loaded users:', data);
+      },
+      error: (err: any) => {
+        console.error('Error fetching users:', err);
+      }
+    });
+  }
+
+  onActivate(userId: number | string) {
+    // We send a default remark as per your Postman body requirement
+    const remarks = "Activated by Superuser";
+    
+    if (confirm('Are you sure you want to activate this user?')) {
+      this.apiService.activateUser(userId, remarks).subscribe({
+        next: (response: string) => {
+          alert(response); // Shows: "User {username} Activated Successfully"
+          this.loadUsers(); // Refresh table to see status change
+        },
+        error: (err: any) => {
+          console.error('Activation failed:', err);
+          alert('Activation failed. Check console.');
+        }
+      });
+    }
+  }
+}
+
+--------
