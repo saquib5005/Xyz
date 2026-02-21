@@ -623,5 +623,14 @@ ngOnInit() {
         Validators.required, 
         Validators.pattern('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
       ]],
+----
 
+<div class="field-group" style="margin-bottom: 1.5rem;">
+          <label for="email" class="field-label" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Email Address <span class="required-asterisk" style="color: red;">*</span></label>
+          <input pInputText id="email" type="email" formControlName="email" placeholder="Enter your email" class="w-full" />
+          
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('required') && signupForm.get('email')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Email is required.</small>
+          
+          <small class="p-error" *ngIf="signupForm.get('email')?.hasError('pattern') && signupForm.get('email')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Enter a valid email address (e.g., name@domain.com).</small>
+        </div>
 
