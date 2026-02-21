@@ -634,3 +634,124 @@ ngOnInit() {
           <small class="p-error" *ngIf="signupForm.get('email')?.hasError('pattern') && signupForm.get('email')?.touched" style="color: red; display: block; margin-top: 0.25rem;">Enter a valid email address (e.g., name@domain.com).</small>
         </div>
 
+------------
+
+// NEW: Activate User Request (Superuser only)
+  activateUser(userId: number | string, remarks: string): Observable<any> {
+    // We expect a plain text response from your Spring Boot controller
+    return this.http.post(
+      `${this.baseUrl}/auth/activate/${userId}`, 
+      { remarks: remarks }, 
+      { responseType: 'text' }
+    );
+  }
+
+------------
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms'; // Needed for the remarks input
+import { TableModule } from 'primeng/table';
+import { Button } from 'primeng/button';
+import { Tag } from 'primeng/tag';
+import { Dialog } from 'primeng/dialog';
+import { InputTextarea } from 'primeng/inputtextarea';
+import { ApiService } from '../../../core/services/api.service';
+
+@Component({
+  selector: 'app-manage-users',
+  standalone: true,
+  imports: [CommonModule, FormsModule, TableModule, Button, Tag, Dialog, InputTextarea],
+  templateUrl: './manage-users.component.html'
+})
+export class ManageUsersComponent {
+  // Added 'id' to the mock data to match your backend requirements
+  pendingUsers = [
+    { id: 1, name: 'Sarah Connor', email: 'sarah@test.com', role: 'Approver' },
+    { id: 2, name: 'Kyle Reese', email: 'kyle@test.com', role: 'User' },
+    { id: 3, name: 'Miles Dyson', email: 'miles@tech.com', role: 'Read-Only' }
+  ];
+
+  displayDialog: boolean = false;
+  selectedUser: any = null;
+  activationRemarks: string = 'Activated after email verification'; // Default remark
+
+  constructor(private apiService: ApiService) {}
+
+  // Opens the popup
+  openActivateDialog(user: any) {
+    this.selectedUser = user;
+    this.activationRemarks = 'Activated after email verification'; // Reset to default
+    this.displayDialog = true;
+  }
+
+  // Sends the actual request to Spring Boot
+  confirmActivation() {
+    if (!this.selectedUser) return;
+
+    this.apiService.activateUser(this.selectedUser.id, this.activationRemarks).subscribe({
+      next: (response) => {
+        // This will display "User {username} Activated Successfully" OR "User already Active"
+        alert(response); 
+        this.displayDialog = false;
+        
+        // Optional: Remove the user from the table after successful activation
+        if (response.includes('Successfully') || response.includes('already Active')) {
+          this.pendingUsers = this.pendingUsers.filter(u => u.id !== this.selectedUser.id);
+        }
+      },
+      error: (err) => {
+        console.error('Activation Error:', err);
+        alert('Failed to connect to backend.');
+      }
+    });
+  }
+}
+
+---------
+<div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+  <h2 style="margin-top: 0; color: #00915a;">User Registrations</h2>
+  <p style="color: #666; margin-bottom: 2rem;">Manage and activate new account requests.</p>
+
+  <p-table [value]="pendingUsers" styleClass="p-datatable-striped">
+    <ng-template #header>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Requested Role</th>
+        <th>Action</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-user>
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td><p-tag [value]="user.role" severity="info"></p-tag></td>
+        <td>
+          <div style="display: flex; gap: 0.5rem;">
+            <p-button label="Activate" icon="pi pi-check" severity="success" size="small" (onClick)="openActivateDialog(user)"></p-button>
+            <p-button label="Reject" icon="pi pi-times" severity="danger" size="small" [outlined]="true"></p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <p-dialog header="Confirm Activation" [(visible)]="displayDialog" [modal]="true" [style]="{width: '400px'}">
+    <div style="margin-bottom: 1.5rem;" *ngIf="selectedUser">
+      <p style="margin-top: 0;">Are you sure you want to activate <strong>{{ selectedUser.name }}</strong>?</p>
+      
+      <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Remarks</label>
+      <textarea pInputTextarea [(ngModel)]="activationRemarks" rows="3" style="width: 100%;"></textarea>
+    </div>
+    
+    <ng-template #footer>
+      <p-button label="Cancel" icon="pi pi-times" (onClick)="displayDialog=false" styleClass="p-button-text"></p-button>
+      <p-button label="Confirm Activation" icon="pi pi-check" (onClick)="confirmActivation()" styleClass="p-button-success"></p-button>
+    </ng-template>
+  </p-dialog>
+
+</div>
+
