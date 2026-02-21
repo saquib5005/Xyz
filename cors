@@ -153,6 +153,25 @@ onSubmit() {
 ------
 
 
-  
+onSubmit() {
+    if (this.signupForm.valid) {
+      // Remove confirmPassword before sending to backend
+      const { confirmPassword, ...userData } = this.signupForm.value;
+      
+      this.apiService.register(userData).subscribe({
+        next: (response) => {
+          alert('Registration successful! Please wait for a Super-user to activate your account.');
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error('Signup Failed:', err);
+          alert('Registration failed. Email might already be in use.');
+        }
+      });
+    } else {
+      this.signupForm.markAllAsTouched();
+    }
+  }
+}
 
   
