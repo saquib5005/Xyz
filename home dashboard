@@ -1,0 +1,139 @@
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  template: `
+    <div style="background: white; padding: 4rem 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; margin-top: 2rem;">
+      <i class="pi pi-shield" style="font-size: 4rem; color: #00915a; margin-bottom: 1rem;"></i>
+      <h2 style="margin-top: 0; color: #333; font-size: 2rem;">BNP Portal Workspace</h2>
+      <p style="color: #666; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+        Your security role has been verified. Please select an action from the sidebar menu to manage your tasks, policies, and approvals.
+      </p>
+    </div>
+  `
+})
+export class HomeComponent {}
+
+-----------
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http'; // <-- 1. Import HttpHeaders
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  private baseUrl = 'http://localhost:8080/api';
+
+  constructor(private http: HttpClient) { }
+
+  // ... keep your existing login, signup, getUsers, activateUser methods ...
+
+  // NEW: Fetch all created policies for Superuser
+  getSuperCreatedPolicies(userId: string): Observable<any> {
+    // 2. Add the custom header exactly as you did in Postman
+    const headers = new HttpHeaders().set('userId', userId);
+    
+    return this.http.get(`${this.baseUrl}/policies/super-view`, { headers: headers });
+  }
+}
+
+---------
+
+  ng generate component features/dashboard/super-policies
+
+  --------
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
+import { Tag } from 'primeng/tag';
+import { ApiService } from '../../../core/services/api';
+
+@Component({
+  selector: 'app-super-policies',
+  standalone: true,
+  imports: [CommonModule, TableModule, Tag],
+  template: `
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h2 style="margin-top: 0; color: #00915a;">All Created Policies (Superuser View)</h2>
+      <p style="color: #666; margin-bottom: 2rem;">A master list of all policies defined in the system.</p>
+
+      <p-table [value]="policies" styleClass="p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Policy ID</th>
+            <th>Plan Name</th>
+            <th>Type</th>
+            <th>Monthly Premium</th>
+            <th>Coverage Limit</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-policy>
+          <tr>
+            <td style="font-weight: bold;">{{ policy.policyId || policy.id }}</td>
+            <td>{{ policy.name || policy.planName }}</td>
+            <td><p-tag [value]="policy.planType || policy.category" severity="info"></p-tag></td>
+            <td>{{ policy.premium | currency:'USD' }}</td>
+            <td>{{ policy.coverage | currency:'USD' }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem;">No policies found.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  `
+})
+export class SuperPoliciesComponent implements OnInit {
+  policies: any[] = [];
+
+  constructor(private apiService: ApiService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    // Hardcoded to '1' matching your Postman test! 
+    // Later, you can fetch this from localStorage: const userId = localStorage.getItem('userId') || '1';
+    const superUserId = '1'; 
+
+    this.apiService.getSuperCreatedPolicies(superUserId).subscribe({
+      next: (data: any) => {
+        this.policies = data;
+        this.cdr.detectChanges(); // Tell Angular to safely draw the table
+      },
+      error: (err: any) => {
+        console.error('Failed to load superuser policies:', err);
+      }
+    });
+  }
+}
+
+-----------
+children: [
+      // ... keep your existing routes ...
+      
+      // Add the new Superuser policies route
+      { path: 'super-policies', loadComponent: () => import('./features/dashboard/super-policies/super-policies.component').then(m => m.SuperPoliciesComponent) },
+      
+      // Add the Home route
+      { path: 'home', loadComponent: () => import('./features/dashboard/home/home.component').then(m => m.HomeComponent) },
+      
+      // CHANGE THIS LINE: Redirect to 'home' instead of 'policies'
+      { path: '', redirectTo: 'home', pathMatch: 'full' }
+    ]
+---------
+
+} else if (role === 'Super-user' || role === 'Superuser') {
+      this.menuItems = [
+        { label: 'Create Policy', icon: 'pi pi-plus', routerLink: ['/dashboard/create-policy'] },
+        // NEW MENU ITEM ADDED HERE:
+        { label: 'View All Created Policies', icon: 'pi pi-folder-open', routerLink: ['/dashboard/super-policies'] },
+        { label: 'Activate Registrations', icon: 'pi pi-user-edit', routerLink: ['/dashboard/manage-users'] }
+      ];
+    }
+
+
+
+  
