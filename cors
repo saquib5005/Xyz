@@ -326,3 +326,46 @@ export class SignupComponent {
 
   </p-card>
 </div>
+
+-----------
+
+<div class="flex align-items-center justify-content-center min-h-screen">
+  <p-card header="Create an Account" [style]="{ width: '400px' }">
+    
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="p-fluid">
+      
+      <div class="field mb-3">
+        <label for="fullName" class="font-semibold">Full Name *</label>
+        <input id="fullName" type="text" pInputText formControlName="fullName" placeholder="Enter your name" />
+        <small class="p-error" *ngIf="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">Name is required.</small>
+      </div>
+
+      <div class="field mb-3">
+        <label for="email" class="font-semibold">Email *</label>
+        <input id="email" type="email" pInputText formControlName="email" placeholder="Enter your email" />
+        <small class="p-error" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">Valid email is required.</small>
+      </div>
+
+      <div class="field mb-3">
+        <label for="role" class="font-semibold">Requested Role *</label>
+        <p-select id="role" formControlName="role" [options]="roles" placeholder="Select Role" appendTo="body"></p-select>
+        <small class="p-error" *ngIf="signupForm.get('role')?.invalid && signupForm.get('role')?.touched">Role is required.</small>
+      </div>
+
+      <div class="field mb-4">
+        <label for="password" class="font-semibold">Password *</label>
+        <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="false" placeholder="Min 6 characters"></p-password>
+        <small class="p-error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">Password must be at least 6 characters.</small>
+      </div>
+
+      <p-button label="Sign Up" type="submit" [disabled]="signupForm.invalid" styleClass="w-full"></p-button>
+
+    </form>
+
+    <div class="text-center mt-4" style="font-size: 0.9rem;">
+      <span class="text-500">Already have an account? </span>
+      <a routerLink="/login" class="text-primary font-semibold no-underline">Log In</a>
+    </div>
+
+  </p-card>
+</div>
