@@ -344,5 +344,39 @@ export class SuperPoliciesComponent implements OnInit {
 --------------
 
 
+onCreate() {
+    if (this.policyForm.valid) {
+      const superUserId = this.authService.getUserId(); 
+      
+      // The raw data from your Angular form
+      const formValues = this.policyForm.value;
 
+      // THE FIX: Translate Angular's form names into Spring Boot's exact database names
+      const payload = {
+        policyId: formValues.policyId,
+        planName: formValues.name,          // Maps 'name' to 'planName'
+        planType: formValues.planType,
+        monthlyPremium: formValues.premium, // Maps 'premium' to 'monthlyPremium'
+        coverageLimit: formValues.coverage  // Maps 'coverage' to 'coverageLimit'
+      };
+
+      console.log('Translated Payload being sent to Spring Boot:', payload);
+
+      this.apiService.createPolicy(payload, superUserId).subscribe({
+        next: (response) => {
+          alert('Policy successfully published to the database!');
+          this.policyForm.reset();
+          
+          // Redirect the user straight to the View Policies table
+          this.router.navigate(['/dashboard/super-policies']); 
+        },
+        error: (err) => {
+          console.error('Failed to create policy:', err);
+          alert('Failed to save policy. Check your Spring Boot terminal for SQL errors.');
+        }
+      });
+    } else {
+      this.policyForm.markAllAsTouched();
+    }
+  }
   
