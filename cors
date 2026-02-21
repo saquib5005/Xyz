@@ -222,5 +222,107 @@ export class SignupComponent {
     }
   }
 }
+------
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
+import { ApiService } from '../../../core/services/api.service';
 
+@Component({
+  selector: 'app-signup',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Card, InputText, Password, Button, Select],
+  templateUrl: './signup.component.html',
+  styleUrl: './signup.component.scss'
+})
+export class SignupComponent {
+  signupForm: FormGroup;
   
+  roles = [
+    { label: 'User', value: 'User' },
+    { label: 'Approver', value: 'Approver' },
+    { label: 'Read-Only', value: 'Read-Only' }
+  ];
+
+  constructor(private fb: FormBuilder, private apiService: ApiService, private router: Router) {
+    this.signupForm = this.fb.group({
+      fullName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      role: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
+
+  onSubmit() {
+    if (this.signupForm.valid) {
+      // Send the form data directly to the backend
+      console.log('Sending Signup Data:', this.signupForm.value);
+      
+      this.apiService.register(this.signupForm.value).subscribe({
+        next: (response) => {
+          alert('Registration successful! Please wait for a Super-user to activate your account.');
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error('Signup Failed:', err);
+          alert('Registration failed. Email might already be in use.');
+        }
+      });
+    } else {
+      this.signupForm.markAllAsTouched();
+    }
+  }
+}
+
+---
+
+<div class="auth-container" style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f4f6f8;">
+  <p-card styleClass="auth-card" [style]="{ width: '450px', padding: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }">
+    
+    <div class="text-center" style="text-align: center; margin-bottom: 2rem;">
+      <h2 style="color: #00915a; margin-bottom: 0.5rem;">Create an Account</h2>
+      <p style="color: #666; margin-top: 0;">Register for the BNP Insurance Portal</p>
+    </div>
+
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="p-fluid" style="display: flex; flex-direction: column; gap: 1.25rem;">
+      
+      <div class="field">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Full Name *</label>
+        <input pInputText formControlName="fullName" placeholder="John Doe" />
+        <small class="p-error" *ngIf="signupForm.get('fullName')?.invalid && signupForm.get('fullName')?.touched">Name is required.</small>
+      </div>
+
+      <div class="field">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Email Address *</label>
+        <input pInputText formControlName="email" type="email" placeholder="john@example.com" />
+        <small class="p-error" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">Valid email is required.</small>
+      </div>
+
+      <div class="field">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Requested Role *</label>
+        <p-select formControlName="role" [options]="roles" placeholder="Select Role" styleClass="w-full"></p-select>
+        <small class="p-error" *ngIf="signupForm.get('role')?.invalid && signupForm.get('role')?.touched">Role selection is required.</small>
+      </div>
+
+      <div class="field">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Password *</label>
+        <p-password formControlName="password" [toggleMask]="true" [feedback]="true" placeholder="Min 6 characters"></p-password>
+        <small class="p-error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">Password must be at least 6 characters.</small>
+      </div>
+
+      <p-button label="Sign Up" type="submit" styleClass="p-button-success w-full" style="margin-top: 1rem;"></p-button>
+
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
+      Already have an account? <a routerLink="/login" style="color: #00915a; font-weight: 600; text-decoration: none;">Log In here</a>
+    </div>
+
+  </p-card>
+</div>
