@@ -211,5 +211,9 @@ public class PolicyController {
 }
 
 ----------
-
+policy.setUserId(req.getUserId());
+        policy.setPlanName(req.getPlanName());
+        policy.setPlanType(req.getPlanType());
+        policy.setCoverageLimit(req.getCoverageLimit());
+        policy.setIsTemplate(true);
 
