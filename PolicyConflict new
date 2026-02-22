@@ -1085,7 +1085,22 @@ public class PolicyService {
         return policyRepository.findAll();
     }
 }
+---
 
+public List<PolicyView> getSuperUserPolicies(Long superUserId) {
+    List<Policy> policies = policyRepository.findByUserId(superUserId);  // Fetch only SuperUser's policies
+    return policies.stream()
+            .map(policy -> {
+                PolicyView dto = new PolicyView();
+                dto.setPolicyId(policy.getId());
+                dto.setPlanName(policy.getPlanName());
+                dto.setPlanType(policy.getPlanType());
+                dto.setMonthlyPremium(policy.getPremiumAmount());  // Assume monthly; adjust if needed
+                dto.setCoverageLimit(policy.getCoverageLimit());
+                return dto;
+            })
+            .collect(Collectors.toList());
+}
 
 
 
