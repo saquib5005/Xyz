@@ -1207,3 +1207,114 @@ public List<PolicyView> getSuperUserPolicies(Long superUserId) {
 </changeSet>
 
 </changeSet>
+========================
+<!-- Hardcoded 5 plans -->
+<changeSet id="011-plans-data" author="you">
+    <insert tableName="plans">
+        <column name="user_id" value="1"/>
+        <column name="plan_name" value="Life Secure Plus"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="premium_amount" value="20000"/>
+        <column name="coverage_limit" value="1500000"/>
+    </insert>
+
+    <insert tableName="plans">
+        <column name="user_id" value="1"/>
+        <column name="plan_name" value="Health Protect"/>
+        <column name="plan_type" value="Health Insurance"/>
+        <column name="premium_amount" value="15000"/>
+        <column name="coverage_limit" value="500000"/>
+    </insert>
+
+    <insert tableName="plans">
+        <column name="user_id" value="1"/>
+        <column name="plan_name" value="Property Guard"/>
+        <column name="plan_type" value="Property Insurance"/>
+        <column name="premium_amount" value="18000"/>
+        <column name="coverage_limit" value="1000000"/>
+    </insert>
+
+    <insert tableName="plans">
+        <column name="user_id" value="1"/>
+        <column name="plan_name" value="Motor Safe"/>
+        <column name="plan_type" value="Motor Insurance"/>
+        <column name="premium_amount" value="12000"/>
+        <column name="coverage_limit" value="750000"/>
+    </insert>
+
+    <insert tableName="plans">
+        <column name="user_id" value="1"/>
+        <column name="plan_name" value="Family Life Cover"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="premium_amount" value="25000"/>
+        <column name="coverage_limit" value="2000000"/>
+    </insert>
+</changeSet>
+
+-------------
+<!-- Add plan_id to policies -->
+<changeSet id="012-add-plan-id" author="you">
+    <addColumn tableName="policies">
+        <column name="plan_id" type="BIGINT"/>
+    </addColumn>
+</changeSet>
+
+----------
+
+<!-- Hardcoded 3 policies with plan_id -->
+<changeSet id="010-policies-data" author="you">
+    <insert tableName="policies">
+        <column name="plan_id" value="1"/>  // Links to plan 1
+        <column name="user_id" value="3"/>
+        <column name="holder_name" value="John Doe"/>
+        <column name="holder_dob" value="1980-05-15"/>
+        <column name="holder_address" value="123 Main St, Bangalore"/>
+        <column name="income_source" value="Salary"/>
+        <column name="total_income" value="100000"/>
+        <column name="tenure_years" value="15"/>
+        <column name="premium_frequency" value="yearly"/>
+        <column name="insured_amount" value="1000000"/>
+        <column name="issuance_date" value="2025-01-15"/>
+        <column name="maturity_date" value="2040-01-15"/>
+        <column name="premium_amount" value="45000"/>
+        <column name="maturity_amount" value="1500000"/>
+        <column name="nominees_json" value='[{"name":"Jane Doe","contactNumber":"1234567890","dob":"2000-01-01","relationship":"Child","percentageStake":100}]'/>
+    </insert>
+
+    <insert tableName="policies">
+        <column name="plan_id" value="2"/>  // Links to plan 2
+        <column name="user_id" value="2"/>
+        <column name="holder_name" value="Jane Smith"/>
+        <column name="holder_dob" value="1990-08-20"/>
+        <column name="holder_address" value="456 Elm St, Town"/>
+        <column name="income_source" value="Business"/>
+        <column name="total_income" value="150000"/>
+        <column name="tenure_years" value="10"/>
+        <column name="premium_frequency" value="monthly"/>
+        <column name="insured_amount" value="500000"/>
+        <column name="issuance_date" value="2024-06-01"/>
+        <column name="maturity_date" value="2034-06-01"/>
+        <column name="premium_amount" value="12000"/>
+        <column name="maturity_amount" value="800000"/>
+        <column name="nominees_json" value='[{"name":"John Smith","contactNumber":"0987654321","dob":"1985-08-20","relationship":"Spouse","percentageStake":100}]'/>
+    </insert>
+
+    <insert tableName="policies">
+        <column name="plan_id" value="3"/>  // Links to plan 3
+        <column name="user_id" value="3"/>
+        <column name="holder_name" value="Alice Johnson"/>
+        <column name="holder_dob" value="1985-03-10"/>
+        <column name="holder_address" value="789 Oak St, Village"/>
+        <column name="income_source" value="Freelance"/>
+        <column name="total_income" value="80000"/>
+        <column name="tenure_years" value="20"/>
+        <column name="premium_frequency" value="quarterly"/>
+        <column name="insured_amount" value="750000"/>
+        <column name="issuance_date" value="2023-03-10"/>
+        <column name="maturity_date" value="2043-03-10"/>
+        <column name="premium_amount" value="18000"/>
+        <column name="maturity_amount" value="1200000"/>
+        <column name="nominees_json" value='[{"name":"Emily Johnson","contactNumber":"5551234567","dob":"2000-03-10","relationship":"Child","percentageStake":50},{"name":"Bob Johnson","contactNumber":"4449876543","dob":"1995-12-05","relationship":"Sibling","percentageStake":50}]'/>
+    </insert>
+</changeSet>
+
