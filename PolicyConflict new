@@ -495,3 +495,46 @@ public Policy issuePolicy(PolicyRequest req) {
 
     </changeSet>
 
+-=-=-=-=-=-=-=-=-=========
+<changeSet id="011-plans-data" author="you">
+    <!-- Plan 1: Life Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Life Secure Plus"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="premium_amount" value="20000"/>
+        <column name="coverage_limit" value="1500000"/>
+    </insert>
+
+    <!-- Plan 2: Health Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Health Protect"/>
+        <column name="plan_type" value="Health Insurance"/>
+        <column name="premium_amount" value="15000"/>
+        <column name="coverage_limit" value="500000"/>
+    </insert>
+
+    <!-- Plan 3: Property Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Property Guard"/>
+        <column name="plan_type" value="Property Insurance"/>
+        <column name="premium_amount" value="18000"/>
+        <column name="coverage_limit" value="1000000"/>
+    </insert>
+
+    <!-- Plan 4: Motor Insurance -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Motor Safe"/>
+        <column name="plan_type" value="Motor Insurance"/>
+        <column name="premium_amount" value="12000"/>
+        <column name="coverage_limit" value="750000"/>
+    </insert>
+
+    <!-- Plan 5: Life Insurance (additional) -->
+    <insert tableName="plans">
+        <column name="plan_name" value="Family Life Cover"/>
+        <column name="plan_type" value="Life Insurance"/>
+        <column name="premium_amount" value="25000"/>
+        <column name="coverage_limit" value="2000000"/>
+    </insert>
+</changeSet>
+
