@@ -217,3 +217,111 @@ policy.setUserId(req.getUserId());
         policy.setCoverageLimit(req.getCoverageLimit());
         policy.setIsTemplate(true);
 
+
+----------
+
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Plan;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PlanRepository;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    public Policy issuePolicy(PolicyRequest req) {
+        // 1. Validate User
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        // 2. Validate & copy from selected Plan
+        Optional<Plan> optPlan = planRepository.findById(req.getPlanId());
+        if (optPlan.isEmpty()) {
+            throw new RuntimeException("Selected Plan not found");
+        }
+
+        Plan plan = optPlan.get();
+
+        Policy policy = new Policy();
+        policy.setId(req.getPlanId());           // Same ID as plan
+        policy.setUser(optUser.get());
+
+        // Copy from Plan (SuperUser created)
+        policy.setPlanName(plan.getPlanName());
+        policy.setPlanType(plan.getPlanType());
+        policy.setCoverageLimit(plan.getCoverageLimit());
+
+        // User-filled 4-step wizard
+        policy.setHolderName(req.getHolderName());
+        policy.setHolderDob(req.getHolderDob());
+        policy.setHolderAddress(req.getHolderAddress());
+        policy.setIncomeSource(req.getIncomeSource());
+        policy.setTotalIncome(req.getTotalIncome());
+        policy.setTenureYears(req.getTenureYears());
+        policy.setPremiumFrequency(req.getPremiumFrequency());
+        policy.setInsuredAmount(req.getInsuredAmount());
+        policy.setIssuanceDate(req.getIssuanceDate());
+
+        // Auto-calculations
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Nominees as JSON
+        List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
+        if (nominees != null && !nominees.isEmpty()) {
+            try {
+                policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to process nominees");
+            }
+        } else {
+            policy.setNomineesJson("[]");
+        }
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
