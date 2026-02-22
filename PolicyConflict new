@@ -1101,8 +1101,109 @@ public List<PolicyView> getSuperUserPolicies(Long superUserId) {
             })
             .collect(Collectors.toList());
 }
+================================
+
+<!-- Policies Table DDL (for User-issued policies, linked to plans) -->
+<changeSet id="002-policies" author="you">
+    <createTable tableName="policies">
+        <column name="policy_id" type="BIGINT" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="plan_id" type="BIGINT">  // ← CHANGE: Added foreign key to plans.id for user selection
+            <constraints nullable="false"/>
+        </column>
+        <column name="user_id" type="BIGINT">
+            <constraints nullable="false"/>
+        </column>
+        <column name="holder_name" type="VARCHAR(100)"/>
+        <column name="holder_dob" type="DATE"/>
+        <column name="holder_address" type="VARCHAR(255)"/>
+        <column name="income_source" type="VARCHAR(100)"/>
+        <column name="total_income" type="DECIMAL(15,2)"/>
+        <column name="tenure_years" type="INT"/>
+        <column name="premium_frequency" type="VARCHAR(20)"/>
+        <column name="insured_amount" type="DECIMAL(15,2)"/>
+        <column name="issuance_date" type="DATE"/>
+        <column name="maturity_date" type="DATE"/>
+        <column name="premium_amount" type="DECIMAL(15,2)"/>
+        <column name="maturity_amount" type="DECIMAL(15,2)"/>
+        <column name="nominees_json" type="TEXT"/>
+        <column name="approval_timestamp" type="TIMESTAMP"/>
+        <column name="approver_name" type="VARCHAR(100)"/>
+        <column name="assignment_details" type="VARCHAR(255)"/>
+    </createTable>
 
 
 
 
+-------
+<!-- Policies Table DML (hardcoded user-issued policies with plan_id link) -->
+<changeSet id="010-policies-data" author="you">
+    <!-- Policy 1: Linked to plan_id 1 -->
+    <insert tableName="policies">
+        <column name="plan_id" value="1"/>  // ← CHANGE: Links to superuser's plan
+        <column name="user_id" value="3"/>
+        <column name="holder_name" value="John Doe"/>
+        <column name="holder_dob" value="1980-05-15"/>
+        <column name="holder_address" value="123 Main St, Bangalore"/>
+        <column name="income_source" value="Salary"/>
+        <column name="total_income" value="100000"/>
+        <column name="tenure_years" value="15"/>
+        <column name="premium_frequency" value="yearly"/>
+        <column name="insured_amount" value="1000000"/>
+        <column name="issuance_date" value="2025-01-15"/>
+        <column name="maturity_date" value="2040-01-15"/>
+        <column name="premium_amount" value="45000"/>
+        <column name="maturity_amount" value="1500000"/>
+        <column name="nominees_json" value='[{"name":"Jane Doe","contactNumber":"1234567890","dob":"2000-01-01","relationship":"Child","percentageStake":100}]'/>
+        <column name="approval_timestamp" valueComputed="CURRENT_TIMESTAMP"/>
+        <column name="approver_name" value="John Approver"/>
+        <column name="assignment_details" value="Assigned to Ravi User"/>
+    </insert>
 
+    <!-- Policy 2: Linked to plan_id 2 -->
+    <insert tableName="policies">
+        <column name="plan_id" value="2"/>  // ← CHANGE: Links to superuser's plan
+        <column name="user_id" value="2"/>
+        <column name="holder_name" value="Jane Smith"/>
+        <column name="holder_dob" value="1990-08-20"/>
+        <column name="holder_address" value="456 Elm St, Town"/>
+        <column name="income_source" value="Business"/>
+        <column name="total_income" value="150000"/>
+        <column name="tenure_years" value="10"/>
+        <column name="premium_frequency" value="monthly"/>
+        <column name="insured_amount" value="500000"/>
+        <column name="issuance_date" value="2024-06-01"/>
+        <column name="maturity_date" value="2034-06-01"/>
+        <column name="premium_amount" value="12000"/>
+        <column name="maturity_amount" value="800000"/>
+        <column name="nominees_json" value='[{"name":"John Smith","contactNumber":"0987654321","dob":"1985-08-20","relationship":"Spouse","percentageStake":100}]'/>
+        <column name="approval_timestamp" valueComputed="CURRENT_TIMESTAMP"/>
+        <column name="approver_name" value="John Approver"/>
+        <column name="assignment_details" value="Assigned to John Approver"/>
+    </insert>
+
+    <!-- Policy 3: Linked to plan_id 3 -->
+    <insert tableName="policies">
+        <column name="plan_id" value="3"/>  // ← CHANGE: Links to superuser's plan
+        <column name="user_id" value="3"/>
+        <column name="holder_name" value="Alice Johnson"/>
+        <column name="holder_dob" value="1985-03-10"/>
+        <column name="holder_address" value="789 Oak St, Village"/>
+        <column name="income_source" value="Freelance"/>
+        <column name="total_income" value="80000"/>
+        <column name="tenure_years" value="20"/>
+        <column name="premium_frequency" value="quarterly"/>
+        <column name="insured_amount" value="750000"/>
+        <column name="issuance_date" value="2023-03-10"/>
+        <column name="maturity_date" value="2043-03-10"/>
+        <column name="premium_amount" value="18000"/>
+        <column name="maturity_amount" value="1200000"/>
+        <column name="nominees_json" value='[{"name":"Emily Johnson","contactNumber":"5551234567","dob":"2000-03-10","relationship":"Child","percentageStake":50},{"name":"Bob Johnson","contactNumber":"4449876543","dob":"1995-12-05","relationship":"Sibling","percentageStake":50}]'/>
+        <column name="approval_timestamp" valueComputed="CURRENT_TIMESTAMP"/>
+        <column name="approver_name" value="John Approver"/>
+        <column name="assignment_details" value="Assigned to Alice User"/>
+    </insert>
+</changeSet>
+
+</changeSet>
