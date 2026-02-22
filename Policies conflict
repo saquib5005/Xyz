@@ -432,3 +432,8 @@ public class PolicyService {
         return policyRepository.findAll();
     }
 }
+------
+
+if (req.getHolderName() == null || req.getHolderDob() == null || req.getHolderAddress() == null || req.getIncomeSource() == null || req.getTotalIncome() == null) {
+    throw new RuntimeException("All wizard fields are required for issued policies");
+}
