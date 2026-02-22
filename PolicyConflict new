@@ -137,3 +137,172 @@
             <column name="nominees_json" type="TEXT"/>
         </createTable>
     </changeSet>
+
+----------
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+
+    private Long userId;
+
+    // SuperUser creates template with these fields
+    private String planName;
+    private String planType;
+    private BigDecimal coverageLimit;
+    private BigDecimal premiumAmount;     // ← Added for SuperUser creation
+    private boolean isTemplate = false;
+
+    // User selects plan and fills 4-step wizard
+    private Long planId;                  // User selects this plan (same ID)
+
+    // Step a: Personal Details
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Step b: Income Details
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Step c: Nominee Details (multiple allowed)
+    private List<NomineeDetails> nominees;
+
+    // Step d: Policy Details (user can override)
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+
+    @Data
+    public static class NomineeDetails {
+        private String name;
+        private String contactNumber;
+        private LocalDate dob;
+        private String relationship;
+        private Integer percentageStake;
+    }
+}
+
+----------
+
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Policy issuePolicy(PolicyRequest req) {
+
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        Policy policy = new Policy();
+        policy.setUser(user);
+
+        // SuperUser creating template (minimal fields)
+        if (req.isTemplate()) {
+            policy.setPlanName(req.getPlanName());
+            policy.setPlanType(req.getPlanType());
+            policy.setCoverageLimit(req.getCoverageLimit());
+            policy.setPremiumAmount(req.getPremiumAmount());   // ← Added for SuperUser
+            policy.setIsTemplate(true);
+        } 
+        // User issuing policy (selects plan + fills 4-step wizard)
+        else {
+            policy.setId(req.getPlanId());   // Same ID as plan
+            policy.setPlanName(req.getPlanName());
+            policy.setPlanType(req.getPlanType());
+            policy.setCoverageLimit(req.getCoverageLimit());
+            policy.setPremiumAmount(req.getPremiumAmount());
+
+            // Step a: Personal Details
+            policy.setHolderName(req.getHolderName());
+            policy.setHolderDob(req.getHolderDob());
+            policy.setHolderAddress(req.getHolderAddress());
+
+            // Step b: Income Details
+            policy.setIncomeSource(req.getIncomeSource());
+            policy.setTotalIncome(req.getTotalIncome());
+
+            // Step d: Policy Details
+            policy.setTenureYears(req.getTenureYears());
+            policy.setPremiumFrequency(req.getPremiumFrequency());
+            policy.setInsuredAmount(req.getInsuredAmount());
+            policy.setIssuanceDate(req.getIssuanceDate());
+
+            policy.setIsTemplate(false);
+        }
+
+        // Auto-calculations (common for both)
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Nominees as JSON
+        List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
+        if (nominees != null && !nominees.isEmpty()) {
+            try {
+                policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to process nominees");
+            }
+        } else {
+            policy.setNomineesJson("[]");
+        }
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+
+
+
