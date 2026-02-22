@@ -537,4 +537,396 @@ public Policy issuePolicy(PolicyRequest req) {
         <column name="coverage_limit" value="2000000"/>
     </insert>
 </changeSet>
+==================================================================
+
+
+// PolicyController.java (No changes from your original – it's already good. Comment: Added comments for clarity)
+package com.example.policy.controller;
+
+import com.example.policy.dto.PolicyView;
+import com.example.policy.entity.Policy;
+import com.example.policy.service.PolicyService;
+import com.example.policy.dto.PolicyRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.policy.repository.PolicyRepository;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/policies")
+public class PolicyController {
+
+    @Autowired
+    private PolicyService policyService;
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @PostMapping("/create")
+    public Policy createPolicy(@RequestBody PolicyRequest req) {
+        return policyService.issuePolicy(req);
+    }
+
+    @GetMapping
+    public List<Policy> getAllPolicies() {
+        return policyService.getAllPolicies();
+    }
+
+    @GetMapping("/read-only")
+    public List<Policy> getAllPoliciesForReadOnly() {
+        return policyRepository.findAll();
+    }
+
+    @DeleteMapping("/{policyId}")
+    public String deletePolicy(@PathVariable Long policyId) {
+        policyRepository.deleteById(policyId);
+        return "Policy Deleted";
+    }
+
+    // View Policies created by SuperUser
+    @GetMapping("/super-view")
+    public List<PolicyView> getSuperUserPolicies(@RequestHeader("userId") Long superUserId) {
+        return policyService.getSuperUserPolicies(superUserId);
+    }
+}
+--------------
+// PolicyRequest.java (No changes from your original – it's already good. Comment: Added comments for clarity)
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+
+    private Long userId;
+
+    // Personal Details (Step a)
+    private PersonalDetails personalDetails;
+
+    // Income Details (Step b)
+    private IncomeDetails incomeDetails;
+
+    // Nominee Details (Step c – list for multiple)
+    private List<NomineeDetails> nomineeDetails;
+
+    // Policy Details (Step d)
+    private PolicyDetails policyDetails;
+
+    @Data
+    public static class PersonalDetails {
+        private String name;
+        private LocalDate dob;
+        private String address;
+    }
+
+    @Data
+    public static class IncomeDetails {
+        private String source;
+        private BigDecimal total;
+    }
+
+    @Data
+    public static class NomineeDetails {
+        private String name;
+        private String contactNumber;
+        private LocalDate dob;
+        private String relationship;
+        private Integer percentageStake;
+    }
+
+    @Data
+    public static class PolicyDetails {
+        private Long planId;
+        private String planName;
+        private String planType;
+        private BigDecimal coverageLimit;
+        private Integer tenureYears;
+        private String premiumFrequency;
+        private BigDecimal insuredAmount;
+        private LocalDate issuanceDate;
+    }
+}
+
+--------------
+// PolicyView.java (No changes from your original – it's already good. Comment: Added comments for clarity)
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+public class PolicyView {
+
+    private Long policyId;
+    private String planName;
+    private String planType;
+    private BigDecimal monthlyPremium;
+    private BigDecimal coverageLimit;
+}
+
+---------------
+// Policy.java (No changes from your original – it's already good. Comment: Added comments for clarity)
+package com.example.policy.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.*;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@Entity
+@Table(name = "policies")
+public class Policy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "policy_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private String planName;
+    private String planType;
+
+    @JsonInclude
+    private BigDecimal coverageLimit;
+
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Metadata
+    @JsonIgnore
+    private LocalDate approvalTimestamp;
+
+    @JsonIgnore
+    private String approverName;
+
+    @JsonIgnore
+    private String assignmentDetails;
+
+    // Nominee Details (Step c – merged as JSON string)
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String nomineesJson;
+}
+
+-------------
+// Plan.java (No changes from your original – it's already good. Comment: Added comments for clarity)
+package com.example.policy.entity;
+
+import lombok.Data;
+
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+
+@Data
+@Entity
+@Table(name = "plans")
+public class Plan {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private Long userId;
+
+    private String planName;
+
+    private String planType;
+
+    private BigDecimal premiumAmount;
+
+    private BigDecimal coverageLimit;
+}
+
+=================
+
+package com.example.policy.repository;
+
+import com.example.policy.entity.Policy;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PolicyRepository extends JpaRepository<Policy, Long> {
+
+    List<Policy> findByUserId(Long userId);  // For "My Policies"
+}
+
+===========
+package com.example.policy.repository;
+
+import com.example.policy.entity.Plan;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PlanRepository extends JpaRepository<Plan, Long> {
+}
+-----------------
+
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.dto.PolicyView;
+import com.example.policy.entity.Plan;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.PlanRepository;
+import com.example.policy.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    @SneakyThrows
+    public Policy issuePolicy(PolicyRequest req) {
+
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        Policy policy = new Policy();
+        policy.setUser(user);
+
+        // SuperUser creating template with minimal fields
+        if (req.isTemplate()) {
+            policy.setPlanName(req.getPlanName());
+            policy.setPlanType(req.getPlanType());
+            policy.setCoverageLimit(req.getCoverageLimit());
+            policy.setPremiumAmount(req.getPremiumAmount());  // ← Added for SuperUser creation
+            policy.setIsTemplate(true);
+        } else {
+            // User issuing policy from template
+            Optional<Plan> optPlan = planRepository.findById(req.getPlanId());
+            if (optPlan.isEmpty()) {
+                throw new RuntimeException("Plan not found");
+            }
+
+            Plan plan = optPlan.get();
+
+            policy.setPlanName(plan.getPlanName());
+            policy.setPlanType(plan.getPlanType());
+            policy.setCoverageLimit(plan.getCoverageLimit());
+            policy.setPremiumAmount(plan.getPremiumAmount());  // ← Copied from plan
+
+            // Step a: Personal Details
+            policy.setHolderName(req.getHolderName());
+            policy.setHolderDob(req.getHolderDob());
+            policy.setHolderAddress(req.getHolderAddress());
+
+            // Step b: Income Details
+            policy.setIncomeSource(req.getIncomeSource());
+            policy.setTotalIncome(req.getTotalIncome());
+
+            // Step d: Policy Details
+            policy.setTenureYears(req.getTenureYears());
+            policy.setPremiumFrequency(req.getPremiumFrequency());
+            <column name="insured_amount" value="DECIMAL(15,2)"/>
+            policy.setIssuanceDate(req.getIssuanceDate());
+            policy.setIsTemplate(false);
+        }
+
+        // Auto-calculations
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Nominees as JSON
+        List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
+        if (nominees != null && !nominees.isEmpty()) {
+            try {
+                policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to process nominees");
+            }
+        } else {
+            policy.setNomineesJson("[]");
+        }
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+-------------------------
+
+
+
+
+
 
