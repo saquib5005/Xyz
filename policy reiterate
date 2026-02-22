@@ -1,0 +1,288 @@
+package com.example.policy.entity;
+
+import lombok.Data;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+
+@Data  // Auto-generates getters/setters
+@Entity
+@Table(name = "plans")
+public class Plan {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long planId;  // Auto-generated
+
+    private String planName;
+
+    private String planType;
+
+    private BigDecimal coverageLimit;  // "claim amount" as coverageLimit
+}
+
+-----------
+
+package com.example.policy.entity;
+
+import lombok.Data;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data  // Auto-generates getters/setters
+@Entity
+@Table(name = "policies")
+public class Policy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private Long planId;  // Links to plan's planId
+
+    private Long userId;  // Issued to this user
+
+    // Step 1: Personal Details
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Step 2: Income Details
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Step 3: Nominee Details as JSON (list)
+    @Lob
+    private String nomineesJson;
+
+    // Step 4: Policy Details
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+
+    // Auto-calculated
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+
+    // Metadata (for Read-Only mode)
+    @JsonIgnore  // Hidden in response
+    private LocalDate approvalTimestamp;
+
+    @JsonIgnore  // Hidden in response
+    private String approverName;
+}
+
+------------
+
+package com.example.policy.service;
+
+import com.example.policy.entity.Plan;
+import com.example.policy.repository.PlanRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class PlanService {
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    public Plan createPlan(Plan plan) {
+        return planRepository.save(plan);
+    }
+
+    public List<Plan> getAllPlans() {
+        return planRepository.findAll();
+    }
+}
+
+---------
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Policy issuePolicy(PolicyRequest req) {
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        Policy policy = new Policy();
+        policy.setUserId(req.getUserId());
+        policy.setPlanId(req.getPlanId());
+
+        // Step 1: Personal Details
+        policy.setHolderName(req.getHolderName());
+        policy.setHolderDob(req.getHolderDob());
+        policy.setHolderAddress(req.getHolderAddress());
+
+        // Step 2: Income Details
+        policy.setIncomeSource(req.getIncomeSource());
+        policy.setTotalIncome(req.getTotalIncome());
+
+        // Step 3: Nominee Details as JSON
+        List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
+        if (nominees != null && !nominees.isEmpty()) {
+            policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
+        } else {
+            policy.setNomineesJson("[]");
+        }
+
+        // Step 4: Policy Details
+        policy.setTenureYears(req.getTenureYears());
+        policy.setPremiumFrequency(req.getPremiumFrequency());
+        policy.setInsuredAmount(req.getInsuredAmount());
+        policy.setIssuanceDate(req.getIssuanceDate());
+
+        // Auto-calculations
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Metadata
+        policy.setApprovalTimestamp(LocalDate.now());
+        policy.setApproverName("System");  // Or from user.getName()
+        policy.setAssignmentDetails("Assigned to " + user.getName());
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+-------------
+package com.example.policy.controller;
+
+import com.example.policy.entity.Policy;
+import com.example.policy.service.PolicyService;
+import com.example.policy.dto.PolicyRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.policy.repository.PolicyRepository;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/policies")
+public class PolicyController {
+
+    @Autowired
+    private PolicyService policyService;
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @PostMapping("/create")
+    public Policy createPolicy(@RequestBody PolicyRequest req) {
+        return policyService.issuePolicy(req);
+    }
+
+    @GetMapping
+    public List<Policy> getAllPolicies() {
+        return policyService.getAllPolicies();
+    }
+
+    @GetMapping("/read-only")
+    public List<Policy> getAllPoliciesForReadOnly() {
+        return policyRepository.findAll();
+    }
+
+    @DeleteMapping("/{policyId}")
+    public String deletePolicy(@PathVariable Long policyId) {
+        policyRepository.deleteById(policyId);
+        return "Policy Deleted";
+    }
+}
+
+---
+
+package com.example.policy.controller;
+
+import com.example.policy.entity.Plan;
+import com.example.policy.service.PlanService;
+import org.springframework.beans.factory.annotation.Autowired;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;
+    private BigDecimal maturityAmount;
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Metadata
+    @JsonIgnore
+    private LocalDate approvalTimestamp;
+
+    @JsonIgnore
+    private String approverName;
+
+    @JsonIgnore
+    private String assignmentDetails;
+
+    // Nominee Details (Step c – merged as JSON string)
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String nomineesJson;
+}
+
+
+
+
+
+
+
+
+
