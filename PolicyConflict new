@@ -99,3 +99,41 @@
         </insert>
 
     </changeSet>
+
+-----------
+
+    <!-- Policies Table - Single table for both SuperUser plans and User-issued policies -->
+    <changeSet id="002-policies" author="you">
+        <createTable tableName="policies">
+            <column name="policy_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- SuperUser Plan Template Fields -->
+            <column name="plan_name" type="VARCHAR(100)"/>
+            <column name="plan_type" type="VARCHAR(50)"/>
+            <column name="coverage_limit" type="DECIMAL(15,2)"/>
+            <column name="is_template" type="BOOLEAN" defaultValueBoolean="false"/>
+            
+            <!-- User-filled 4-step wizard fields -->
+            <column name="holder_name" type="VARCHAR(100)"/>
+            <column name="holder_dob" type="DATE"/>
+            <column name="holder_address" type="VARCHAR(255)"/>
+            <column name="income_source" type="VARCHAR(100)"/>
+            <column name="total_income" type="DECIMAL(15,2)"/>
+            <column name="tenure_years" type="INT"/>
+            <column name="premium_frequency" type="VARCHAR(20)"/>
+            <column name="insured_amount" type="DECIMAL(15,2)"/>
+            <column name="issuance_date" type="DATE"/>
+            <column name="maturity_date" type="DATE"/>
+            <column name="premium_amount" type="DECIMAL(15,2)"/>
+            <column name="maturity_amount" type="DECIMAL(15,2)"/>
+            
+            <!-- Nominees merged as JSON string -->
+            <column name="nominees_json" type="TEXT"/>
+        </createTable>
+    </changeSet>
