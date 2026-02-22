@@ -290,5 +290,23 @@ public class PolicyService {
 }
 
 ----------
+public List<Nominee> getNominees() {
+    return nominees;
+}
 
+public boolean isTemplate() {
+    return isTemplate;
+}
+
+public String getPlanName() {
+    return planName;
+}
+
+public String getPlanType() {
+    return planType;
+}
+
+public BigDecimal getCoverageLimit() {
+    return coverageLimit;
+}
 
