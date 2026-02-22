@@ -924,6 +924,167 @@ public class PolicyService {
     }
 }
 -------------------------
+================
+
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;  // ← CHANGE: Added import for BigDecimal
+import java.time.LocalDate;  // ← CHANGE: Added import for LocalDate
+
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+
+    private Long userId;
+
+    // Personal Details (Step a)
+    private PersonalDetails personalDetails;
+
+    // Income Details (Step b)
+    private IncomeDetails incomeDetails;
+
+    // Nominee Details (Step c – list for multiple)
+    private List<NomineeDetails> nomineeDetails;
+
+    // Policy Details (Step d)
+    private PolicyDetails policyDetails;
+
+    @Data
+    public static class PersonalDetails {
+        private String name;
+        private LocalDate dob;
+        private String address;
+    }
+
+    @Data
+    public static class IncomeDetails {
+        private String source;
+        private BigDecimal total;
+    }
+
+    @Data
+    public static class NomineeDetails {
+        private String name;
+        private String contactNumber;
+        private LocalDate dob;
+        private String relationship;
+        private Integer percentageStake;
+    }
+
+    @Data
+    public static class PolicyDetails {
+        private Long planId;
+        private String planName;
+        private String planType;
+        private BigDecimal coverageLimit;
+        private Integer tenureYears;
+        private String premiumFrequency;
+        private BigDecimal insuredAmount;
+        private LocalDate issuanceDate;
+    }
+}
+
+---------
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;  // ← CHANGE: Added import for RoundingMode
+import java.time.LocalDate;
+import java.util.Optional;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private final ObjectMapper mapper = new ObjectMapper();  // ← CHANGE: Initialized mapper for JSON
+
+    public Policy issuePolicy(PolicyRequest req) {
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        Policy policy = new Policy();
+        policy.setUser(user);
+
+        // Step a: Personal Details
+        policy.setHolderName(req.getPersonalDetails().getName());
+        policy.setHolderDob(req.getPersonalDetails().getDob());
+        policy.setHolderAddress(req.getPersonalDetails().getAddress());
+
+        // Step b: Income Details
+        policy.setIncomeSource(req.getIncomeDetails().getSource());
+        policy.setTotalIncome(req.getIncomeDetails().getTotal());
+
+        // Step d: Policy Details
+        policy.setPlanName(req.getPolicyDetails().getPlanName());
+        policy.setPlanType(req.getPolicyDetails().getPlanType());
+        policy.setCoverageLimit(req.getPolicyDetails().getCoverageLimit());
+        policy.setTenureYears(req.getPolicyDetails().getTenureYears());
+        policy.setPremiumFrequency(req.getPolicyDetails().getPremiumFrequency());
+        policy.setInsuredAmount(req.getPolicyDetails().getInsuredAmount());
+        policy.setIssuanceDate(req.getPolicyDetails().getIssuanceDate());
+
+        // Auto-calculations
+        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+            switch (policy.getPremiumFrequency().toLowerCase()) {
+                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                default -> policy.setPremiumAmount(base);
+            }
+        }
+
+        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+            BigDecimal mat = policy.getInsuredAmount()
+                    .multiply(BigDecimal.valueOf(1.5))
+                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+            policy.setMaturityAmount(mat);
+        }
+
+        // Step c: Nominee Details
+        List<PolicyRequest.NomineeDetails> nominees = req.getNomineeDetails();
+        if (nominees != null && !nominees.isEmpty()) {
+            try {
+                policy.setNomineesJson(mapper.writeValueAsString(nominees));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to process nominees: " + e.getMessage());
+            }
+        } else {
+            policy.setNomineesJson("[]");
+        }
+
+        return policyRepository.save(policy);
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
 
 
 
