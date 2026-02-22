@@ -1,279 +1,101 @@
-package com.example.policy.entity;
+    <!-- Full DML for Policies Table (Single Table - Plans + Policies) -->
+    <changeSet id="010-wizard-data" author="you">
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import lombok.Data;
+        <!-- 1. SuperUser created Plans (Templates) - Minimal fields + premiumAmount -->
+        <insert tableName="policies">
+            <column name="user_id" value="1"/>
+            <column name="plan_name" value="Family Life Cover"/>
+            <column name="plan_type" value="Life Insurance"/>
+            <column name="coverage_limit" value="1500000"/>
+            <column name="premium_amount" value="12500"/>   <!-- Added premiumAmount -->
+            <column name="is_template" valueBoolean="true"/>
+        </insert>
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+        <insert tableName="policies">
+            <column name="user_id" value="1"/>
+            <column name="plan_name" value="Health Protect"/>
+            <column name="plan_type" value="Health Insurance"/>
+            <column name="coverage_limit" value="800000"/>
+            <column name="premium_amount" value="15000"/>   <!-- Added premiumAmount -->
+            <column name="is_template" valueBoolean="true"/>
+        </insert>
 
-@Data
-@Entity
-@Table(name = "policies")
-public class Policy {
+        <insert tableName="policies">
+            <column name="user_id" value="1"/>
+            <column name="plan_name" value="Auto Safe Plus"/>
+            <column name="plan_type" value="Motor Insurance"/>
+            <column name="coverage_limit" value="1200000"/>
+            <column name="premium_amount" value="18000"/>   <!-- Added premiumAmount -->
+            <column name="is_template" valueBoolean="true"/>
+        </insert>
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "policy_id")
-    private Long id;                    // This is both plan_id and policy_id
+        <!-- 2. User-issued Policies (Full 4-step wizard) - Select plan_id and fill wizard -->
+        <insert tableName="policies">
+            <column name="policy_id" value="1"/>  <!-- Same ID as plan -->
+            <column name="user_id" value="3"/>
+            <column name="holder_name" value="John Doe"/>
+            <column name="holder_dob" value="1980-05-15"/>
+            <column name="holder_address" value="123 Main St, Bangalore"/>
+            <column name="income_source" value="Salary"/>
+            <column name="total_income" value="100000"/>
+            <column name="plan_name" value="Family Life Cover"/>
+            <column name="plan_type" value="Life Insurance"/>
+            <column name="coverage_limit" value="1500000"/>
+            <column name="tenure_years" value="30"/>
+            <column name="premium_frequency" value="quarterly"/>
+            <column name="insured_amount" value="1000000"/>
+            <column name="issuance_date" value="2026-02-10"/>
+            <column name="maturity_date" value="2056-02-10"/>
+            <column name="premium_amount" value="12500"/>
+            <column name="maturity_amount" value="1500000"/>
+            <column name="nominees_json" value='[{"name":"Jane Doe","contactNumber":"1234567890","dob":"2000-01-01","relationship":"Child","percentageStake":100}]'/>
+            <column name="is_template" valueBoolean="false"/>
+        </insert>
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+        <!-- Additional User-Issued Policy (Entry 4) -->
+        <insert tableName="policies">
+            <column name="policy_id" value="2"/>  <!-- Same ID as plan -->
+            <column name="user_id" value="3"/>
+            <column name="holder_name" value="Rahul Sharma"/>
+            <column name="holder_dob" value="1992-07-15"/>
+            <column name="holder_address" value="789 Park Avenue, Mumbai"/>
+            <column name="income_source" value="IT Job"/>
+            <column name="total_income" value="180000"/>
+            <column name="plan_name" value="Health Protect"/>
+            <column name="plan_type" value="Health Insurance"/>
+            <column name="coverage_limit" value="800000"/>
+            <column name="tenure_years" value="5"/>
+            <column name="premium_frequency" value="monthly"/>
+            <column name="insured_amount" value="500000"/>
+            <column name="issuance_date" value="2026-03-01"/>
+            <column name="maturity_date" value="2031-03-01"/>
+            <column name="premium_amount" value="15000"/>
+            <column name="maturity_amount" value="750000"/>
+            <column name="nominees_json" value='[{"name":"Priya Sharma","contactNumber":"9876543210","dob":"2015-06-20","relationship":"Child","percentageStake":100}]'/>
+            <column name="is_template" valueBoolean="false"/>
+        </insert>
 
-    // SuperUser template fields (minimal)
-    private String planName;
-    private String planType;
-    private BigDecimal coverageLimit;
-    private boolean isTemplate = false;  // true = SuperUser template, false = full policy
+        <!-- Additional User-Issued Policy (Entry 5) -->
+        <insert tableName="policies">
+            <column name="policy_id" value="3"/>  <!-- Same ID as plan -->
+            <column name="user_id" value="3"/>
+            <column name="holder_name" value="Sneha Patel"/>
+            <column name="holder_dob" value="1988-11-12"/>
+            <column name="holder_address" value="45 MG Road, Ahmedabad"/>
+            <column name="income_source" value="Business"/>
+            <column name="total_income" value="220000"/>
+            <column name="plan_name" value="Auto Safe Plus"/>
+            <column name="plan_type" value="Motor Insurance"/>
+            <column name="coverage_limit" value="1200000"/>
+            <column name="tenure_years" value="5"/>
+            <column name="premium_frequency" value="half-yearly"/>
+            <column name="insured_amount" value="800000"/>
+            <column name="issuance_date" value="2026-04-01"/>
+            <column name="maturity_date" value="2031-04-01"/>
+            <column name="premium_amount" value="18000"/>
+            <column name="maturity_amount" value="950000"/>
+            <column name="nominees_json" value='[{"name":"Aarav Patel","contactNumber":"5551234567","dob":"2018-03-15","relationship":"Child","percentageStake":100}]'/>
+            <column name="is_template" valueBoolean="false"/>
+        </insert>
 
-    // User-filled 4-step wizard fields
-    private String holderName;
-    private LocalDate holderDob;
-    private String holderAddress;
-    private String incomeSource;
-    private BigDecimal totalIncome;
-    private Integer tenureYears;
-    private String premiumFrequency;
-    private BigDecimal insuredAmount;
-    private LocalDate issuanceDate;
-    private LocalDate maturityDate;
-    private BigDecimal premiumAmount;
-    private BigDecimal maturityAmount;
-
-    // Nominee Details (merged as JSON string)
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String nomineesJson;
-
-    // Metadata for Read-Only mode
-    @JsonIgnore
-    private LocalDate approvalTimestamp;
-    @JsonIgnore
-    private String approverName;
-    @JsonIgnore
-    private String assignmentDetails;
-}
-
---------
-package com.example.policy.dto;
-
-import lombok.Data;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-
-@Data
-public class PolicyRequest {
-
-    private Long userId;           // User issuing the policy
-    private Long planId;           // User selects this plan (same ID as policy_id)
-
-    // Step a: Personal Details
-    private String holderName;
-    private LocalDate holderDob;
-    private String holderAddress;
-
-    // Step b: Income Details
-    private String incomeSource;
-    private BigDecimal totalIncome;
-
-    // Step c: Nominee Details (multiple allowed)
-    private List<NomineeDetails> nominees;
-
-    // Step d: Policy Details (from selected plan)
-    private Integer tenureYears;
-    private String premiumFrequency;
-    private BigDecimal insuredAmount;
-    private LocalDate issuanceDate;
-
-    @Data
-    public static class NomineeDetails {
-        private String name;
-        private String contactNumber;
-        private LocalDate dob;
-        private String relationship;
-        private Integer percentageStake;
-    }
-}
-
----------------
-package com.example.policy.service;
-
-import com.example.policy.dto.PolicyRequest;
-import com.example.policy.entity.Policy;
-import com.example.policy.entity.User;
-import com.example.policy.repository.PolicyRepository;
-import com.example.policy.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-
-@Service
-public class PolicyService {
-
-    @Autowired
-    private PolicyRepository policyRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    public Policy issuePolicy(PolicyRequest req) {
-        Optional<User> optUser = userRepository.findById(req.getUserId());
-        if (optUser.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-
-        User user = optUser.get();
-
-        Policy policy;
-
-        // If planId is provided, it's a user issuing from SuperUser plan
-        if (req.getPlanId() != null) {
-            policy = policyRepository.findById(req.getPlanId())
-                    .orElseThrow(() -> new RuntimeException("Plan not found"));
-            policy.setIsTemplate(false);  // Convert to full policy
-        } else {
-            // SuperUser creating new template
-            policy = new Policy();
-            policy.setIsTemplate(true);
-        }
-
-        policy.setUser(user);
-        policy.setPlanName(req.getPlanName());
-        policy.setPlanType(req.getPlanType());
-        policy.setCoverageLimit(req.getCoverageLimit());
-
-        // User-filled 4-step wizard fields
-        policy.setHolderName(req.getHolderName());
-        policy.setHolderDob(req.getHolderDob());
-        policy.setHolderAddress(req.getHolderAddress());
-        policy.setIncomeSource(req.getIncomeSource());
-        policy.setTotalIncome(req.getTotalIncome());
-        policy.setTenureYears(req.getTenureYears());
-        policy.setPremiumFrequency(req.getPremiumFrequency());
-        policy.setInsuredAmount(req.getInsuredAmount());
-        policy.setIssuanceDate(req.getIssuanceDate());
-
-        // Auto-calculations
-        if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
-            policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
-        }
-
-        if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
-            BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
-            switch (policy.getPremiumFrequency().toLowerCase()) {
-                case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
-                case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
-                case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
-                default -> policy.setPremiumAmount(base);
-            }
-        }
-
-        if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
-            BigDecimal mat = policy.getInsuredAmount()
-                    .multiply(BigDecimal.valueOf(1.5))
-                    .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
-            policy.setMaturityAmount(mat);
-        }
-
-        // Nominees as JSON
-        List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
-        if (nominees != null && !nominees.isEmpty()) {
-            try {
-                policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to process nominees");
-            }
-        } else {
-            policy.setNomineesJson("[]");
-        }
-
-        return policyRepository.save(policy);
-    }
-
-    public List<Policy> getAllPolicies() {
-        return policyRepository.findAll();
-    }
-}
-
-<!-- Policies Table (Single table for both plans and policies) -->
-<changeSet id="002-policies" author="you">
-    <createTable tableName="policies">
-        <column name="policy_id" type="BIGINT" autoIncrement="true">
-            <constraints primaryKey="true" nullable="false"/>
-        </column>
-        <column name="user_id" type="BIGINT">
-            <constraints nullable="false"/>
-        </column>
-        <column name="plan_name" type="VARCHAR(100)"/>
-        <column name="plan_type" type="VARCHAR(50)"/>
-        <column name="coverage_limit" type="DECIMAL(15,2)"/>
-        <column name="tenure_years" type="INT"/>
-        <column name="premium_frequency" type="VARCHAR(20)"/>
-        <column name="insured_amount" type="DECIMAL(15,2)"/>
-        <column name="issuance_date" type="DATE"/>
-        <column name="maturity_date" type="DATE"/>
-        <column name="premium_amount" type="DECIMAL(15,2)"/>
-        <column name="maturity_amount" type="DECIMAL(15,2)"/>
-        <column name="holder_name" type="VARCHAR(100)"/>
-        <column name="holder_dob" type="DATE"/>
-        <column name="holder_address" type="VARCHAR(255)"/>
-        <column name="income_source" type="VARCHAR(100)"/>
-        <column name="total_income" type="DECIMAL(15,2)"/>
-        <column name="nominees_json" type="TEXT"/>
-        <column name="is_template" type="BOOLEAN" defaultValueBoolean="false"/>
-    </createTable>
-</changeSet>
-
----------
-
-<!-- Hardcoded Data -->
-<changeSet id="010-wizard-data" author="you">
-    <!-- SuperUser created Plans (is_template = true) -->
-    <insert tableName="policies">
-        <column name="user_id" value="1"/>
-        <column name="plan_name" value="Family Life Cover"/>
-        <column name="plan_type" value="Life Insurance"/>
-        <column name="coverage_limit" value="1500000"/>
-        <column name="is_template" valueBoolean="true"/>
-    </insert>
-
-    <!-- User-issued Policy (selects plan_id = 1) -->
-    <insert tableName="policies">
-        <column name="policy_id" value="1"/>  <!-- Same ID as plan -->
-        <column name="user_id" value="3"/>
-        <column name="holder_name" value="John Doe"/>
-        <column name="holder_dob" value="1980-05-15"/>
-        <column name="holder_address" value="123 Main St"/>
-        <column name="income_source" value="Salary"/>
-        <column name="total_income" value="100000"/>
-        <column name="plan_name" value="Family Life Cover"/>
-        <column name="plan_type" value="Life Insurance"/>
-        <column name="coverage_limit" value="1500000"/>
-        <column name="tenure_years" value="30"/>
-        <column name="premium_frequency" value="quarterly"/>
-        <column name="insured_amount" value="1000000"/>
-        <column name="issuance_date" value="2026-02-10"/>
-        <column name="maturity_date" value="2056-02-10"/>
-        <column name="premium_amount" value="12500"/>
-        <column name="maturity_amount" value="1500000"/>
-        <column name="nominees_json" value='[{"name":"Jane Doe","contactNumber":"1234567890","dob":"2000-01-01","relationship":"Child","percentageStake":100}]'/>
-        <column name="is_template" valueBoolean="false"/>
-    </insert>
-</changeSet>
-
-
-
-
-
-
-
-
+    </changeSet>
