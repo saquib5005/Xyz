@@ -1,0 +1,294 @@
+package com.example.policy.entity;
+
+import lombok.Data;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+
+@Data
+@Entity
+@Table(name = "plans")
+public class Plan {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  // This is the plan_id
+
+    private Long userId;  // SuperUser who created
+
+    private String planName;
+    private String planType;
+    private BigDecimal coverageLimit;
+}
+---------
+
+package com.example.policy.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.*;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@Entity
+@Table(name = "policies")
+public class Policy {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private Long planId;  // ← CHANGE: Added to link to plans.id (user selects this)
+
+    private String planName;  // Copied from plan
+    private String planType;  // Copied from plan
+    @JsonInclude
+    private BigDecimal coverageLimit;  // Copied from plan
+
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+    private LocalDate maturityDate;
+    private BigDecimal premiumAmount;  // Calculated in wizard
+    private BigDecimal maturityAmount;  // Calculated in wizard
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Metadata
+    @JsonIgnore
+    private LocalDate approvalTimestamp;
+
+    @JsonIgnore
+    private String approverName;
+
+    @JsonIgnore
+    private String assignmentDetails;
+
+    // Nominee Details (Step c – merged as JSON string)
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String nomineesJson;
+}
+
+-----------
+
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+public class PolicyRequest {
+
+    private Long userId;
+
+    private Long planId;  // ← CHANGE: Added for user to select plan
+
+    // Personal Details (Step a)
+    private String holderName;
+    private LocalDate holderDob;
+    private String holderAddress;
+
+    // Income Details (Step b)
+    private String incomeSource;
+    private BigDecimal totalIncome;
+
+    // Nominee Details (Step c – list for multiple)
+    private List<NomineeDetails> nomineeDetails;
+
+    // Policy Details (Step d)
+    private Integer tenureYears;
+    private String premiumFrequency;
+    private BigDecimal insuredAmount;
+    private LocalDate issuanceDate;
+
+    @Data
+    public static class NomineeDetails {
+        private String name;
+        private String contactNumber;
+        private LocalDate dob;
+        private String relationship;
+        private Integer percentageStake;
+    }
+}
+
+--------------
+package com.example.policy.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+public class PolicyView {
+
+    private Long policyId;
+    private String planName;
+    private String planType;
+    private BigDecimal monthlyPremium;
+    private BigDecimal coverageLimit;
+}
+
+--------
+
+package com.example.policy.repository;
+
+import com.example.policy.entity.Policy;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PolicyRepository extends JpaRepository<Policy, Long> {
+
+    List<Policy> findByUserId(Long userId);  // For "My Policies"
+}
+---------------
+
+package com.example.policy.service;
+
+import com.example.policy.dto.PolicyRequest;
+import com.example.policy.dto.PolicyView;
+import com.example.policy.entity.Plan;
+import com.example.policy.entity.Policy;
+import com.example.policy.entity.User;
+import com.example.policy.repository.PolicyRepository;
+import com.example.policy.repository.PlanRepository;
+import com.example.policy.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class PolicyService {
+
+    @Autowired
+    private PolicyRepository policyRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PlanRepository planRepository;
+
+    @SneakyThrows
+    public Policy issuePolicy(PolicyRequest req) {
+
+        Optional<User> optUser = userRepository.findById(req.getUserId());
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = optUser.get();
+
+        // SuperUser creating template with minimal fields
+        if (req.isTemplate()) {
+            Plan plan = new Plan();
+            plan.setUserId(req.getUserId());
+            plan.setPlanName(req.getPlanName());
+            plan.setPlanType(req.getPlanType());
+            plan.setCoverageLimit(req.getCoverageLimit());
+
+            return planRepository.save(plan);  // Save to plans table
+        } else {
+            // User issuing policy from template
+            Optional<Plan> optPlan = planRepository.findById(req.getPlanId());
+            if (optPlan.isEmpty()) {
+                throw new RuntimeException("Plan not found");
+            }
+
+            Plan plan = optPlan.get();
+
+            Policy policy = new Policy();
+            policy.setUser(user);
+            policy.setPlanId(req.getPlanId());  // Link to plan
+            policy.setPlanName(plan.getPlanName());  // Copy from plan
+            policy.setPlanType(plan.getPlanType());  // Copy from plan
+            policy.setCoverageLimit(plan.getCoverageLimit());  // Copy from plan
+
+            // Step a: Personal Details
+            policy.setHolderName(req.getHolderName());
+            policy.setHolderDob(req.getHolderDob());
+            policy.setHolderAddress(req.getHolderAddress());
+
+            // Step b: Income Details
+            policy.setIncomeSource(req.getIncomeSource());
+            policy.setTotalIncome(req.getTotalIncome());
+
+            // Step d: Policy Details
+            policy.setTenureYears(req.getTenureYears());
+            policy.setPremiumFrequency(req.getPremiumFrequency());
+            policy.setInsuredAmount(req.getInsuredAmount());
+            policy.setIssuanceDate(req.getIssuanceDate());
+
+            // Auto-calculations
+            if (policy.getIssuanceDate() != null && policy.getTenureYears() != null) {
+                policy.setMaturityDate(policy.getIssuanceDate().plusYears(policy.getTenureYears()));
+            }
+
+            if (policy.getInsuredAmount() != null && policy.getPremiumFrequency() != null) {
+                BigDecimal base = policy.getInsuredAmount().multiply(new BigDecimal("0.05"));
+                switch (policy.getPremiumFrequency().toLowerCase()) {
+                    case "monthly" -> policy.setPremiumAmount(base.divide(new BigDecimal("12"), 2, RoundingMode.HALF_UP));
+                    case "quarterly" -> policy.setPremiumAmount(base.divide(new BigDecimal("4"), 2, RoundingMode.HALF_UP));
+                    case "half-yearly" -> policy.setPremiumAmount(base.divide(new BigDecimal("2"), 2, RoundingMode.HALF_UP));
+                    default -> policy.setPremiumAmount(base);
+                }
+            }
+
+            if (policy.getInsuredAmount() != null && policy.getTenureYears() != null) {
+                BigDecimal mat = policy.getInsuredAmount()
+                        .multiply(BigDecimal.valueOf(1.5))
+                        .multiply(BigDecimal.valueOf(policy.getTenureYears() / 10.0));
+                policy.setMaturityAmount(mat);
+            }
+
+            // Step c: Nominees as JSON
+            List<PolicyRequest.NomineeDetails> nominees = req.getNominees();
+            if (nominees != null && !nominees.isEmpty()) {
+                try {
+                    policy.setNomineesJson(new ObjectMapper().writeValueAsString(nominees));
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to process nominees");
+                }
+            } else {
+                policy.setNomineesJson("[]");
+            }
+
+            return policyRepository.save(policy);
+        }
+    }
+
+    public List<Policy> getAllPolicies() {
+        return policyRepository.findAll();
+    }
+}
+
+----------
+
+
